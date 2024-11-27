@@ -1,12 +1,12 @@
 {
-    "name": "risetechapps/media-for-tenancy",
+    "name": "risetechapps/media-for-laravel",
     "description": "",
     "keywords": [
         "risetechapps",
         "media",
         "uploads"
     ],
-    "homepage": "https://github.com/risetechapps/media",
+    "homepage": "https://github.com/risetechapps/media-for-laravel",
     "license": "MIT",
     "type": "library",
     "authors": [
@@ -22,7 +22,8 @@
         "league/flysystem-aws-s3-v3": "^3.0",
         "spatie/laravel-medialibrary": "11.10.0",
         "spatie/pdf-to-image": "^1.2",
-        "php-ffmpeg/php-ffmpeg": "^1.3"
+        "php-ffmpeg/php-ffmpeg": "^1.3",
+        "risetechapps/monitoring-for-laravel": "^1.0"
     },
     "require-dev": {
         "orchestra/testbench": "^7.0|^8.0",
