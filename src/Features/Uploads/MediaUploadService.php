@@ -5,6 +5,7 @@ namespace RiseTechApps\Media\Features\Uploads;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use RiseTechApps\Media\Models\MediaUploadTemporary;
 
 class MediaUploadService
@@ -83,13 +84,15 @@ class MediaUploadService
         if (!is_null($uploads)) {
             $id = $uploads['id'];
 
-            $temporaryUpload = MediaUploadTemporary::find($id);
-            if ($temporaryUpload) {
+            if(Str::isUuid($id)){
+                $temporaryUpload = MediaUploadTemporary::find($id);
+                if ($temporaryUpload) {
 
-                $media = $temporaryUpload->getFirstMedia('*');
-                $model->addMediaFromDisk($media->getPathRelativeToRoot(), $media->disk)
-                    ->toMediaCollection($media->collection_name);
-                $temporaryUpload->delete();
+                    $media = $temporaryUpload->getFirstMedia('*');
+                    $model->addMediaFromDisk($media->getPathRelativeToRoot(), $media->disk)
+                        ->toMediaCollection($media->collection_name);
+                    $temporaryUpload->delete();
+                }
             }
         }
     }
