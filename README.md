@@ -1,37 +1,77 @@
-# Very short description of the package
+# Laravel Media
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/RiseTechApps\/address.svg?style=flat-square)](https://packagist.org/packages/RiseTechApps\/address)
-[![Total Downloads](https://img.shields.io/packagist/dt/RiseTechApps\/address.svg?style=flat-square)](https://packagist.org/packages/RiseTechApps\/address)
-![GitHub Actions](https://github.com/RiseTechApps\/address/actions/workflows/main.yml/badge.svg)
+## 📌 Sobre o Projeto
+O **Media For Laravel** é um package que extende funcionalidades do spatie/laravel-medialibrary.
 
-This is where your description should go. Try and limit it to a paragraph or two, and maybe throw in a mention of what PSRs you support to avoid any confusion with users and contributors.
+## ✨ Funcionalidades
+- 🏷 **Upload de arquivos** você pode fazer upload de arquivos sem burocracia
+- 🏷 **Upload de arquivos temporarios** upload de arquivos temporarios para não encher seu armazenamento
+- 🏷 **Suporte S3** compativel com qualquer armazenamento s3
 
-## Installation
+---
 
-You can install the package via composer:
+## 🚀 Instalação
 
+### 1️⃣ Requisitos
+Antes de instalar, certifique-se de que seu projeto atenda aos seguintes requisitos:
+- PHP >= 8.0
+- Laravel >= 10
+- Composer instalado
+
+### 2️⃣ Instalação do Package
+Execute o seguinte comando no terminal:
 ```bash
-
-composer require RiseTechApps\apps/address
+  composer risetechapps/media-for-laravel
 ```
 
-### Changelog
+---
 
-Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recently.
+## 🔑 Autenticação via API
 
-## Contributing
+### 🔹 Rota de Login
+**Endpoint:** `/uploads`
+**Método:** `POST`
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
+#### Exemplo de Requisição:
+```json
+{
+    "file": "example.text",
+    "collection": "uploads"
+}
+```
 
-### Security
+#### Exemplo de Resposta:
 
-If you discover any security related issues, please email apps@RiseTechApps\.com.br instead of using the issue tracker.
+```json
+{
+    "success": true,
+    "data": {
+        "id": "xxxxxxxxx",
+        "name": "example",
+        "type": "application/text",
+        "size": "100",
+        "preview": "https://preview/xxxxxx",
+        "collection": "uploads"
+    }
+}
+```
 
-## Credits
 
--   [Rise Tech](https://github.com/RiseTechApps\apps)
--   [All Contributors](../../contributors)
+---
 
-## License
+## 🛠 Contribuição
+Sinta-se à vontade para contribuir! Basta seguir estes passos:
+1. Faça um fork do repositório
+2. Crie uma branch (`feature/nova-funcionalidade`)
+3. Faça um commit das suas alterações
+4. Envie um Pull Request
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+---
+
+## 📜 Licença
+Este projeto é distribuído sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+💡 **Desenvolvido por [Rise Tech](https://risetech.com.br)**
+
