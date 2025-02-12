@@ -53,7 +53,7 @@ class MediaServiceProvider extends ServiceProvider
     {
         $disks = $this->app['config']['filesystems.disks'];
 
-        $exclude = $this->app['config']['media.disk.exclude'] ?? [];
+        $exclude = is_null($this->app['config']['media.disk.exclude']) ? [] : $this->app['config']['media.disk.exclude'];
 
         $prefix = $this->app['config']['media.disk.prefix'] . DIRECTORY_SEPARATOR;
 
