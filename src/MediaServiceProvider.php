@@ -46,9 +46,7 @@ class MediaServiceProvider extends ServiceProvider
             return new Media();
         });
 
-        if (file_exists(base_path('config/media.php'))) {
-            $this->mergeConfigFrom(__DIR__ . '/../config/config.php', 'media');
-        }
+        $this->mergeConfigFrom(__DIR__ . '/../config/config.php', 'media');
     }
 
     public function setPrefixFilesystems(): void
@@ -57,7 +55,7 @@ class MediaServiceProvider extends ServiceProvider
 
         $exclude = $this->app['config']['media.disk.exclude'] ?? [];
 
-        $prefix = $this->app['config']['media.disk.prefix'];
+        $prefix = $this->app['config']['media.disk.prefix'] . DIRECTORY_SEPARATOR;
 
         foreach ($disks as $key => $value) {
 
