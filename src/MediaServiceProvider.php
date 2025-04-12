@@ -42,7 +42,7 @@ class MediaServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Register the main class to use with the facade
-        $this->app->singleton('media', function () {
+        $this->app->singleton(Media::class, function () {
             return new Media();
         });
 
