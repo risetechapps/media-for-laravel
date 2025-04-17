@@ -28,10 +28,10 @@ class MediaServiceProvider extends ServiceProvider
         Config::set('media-library.media_model', \RiseTechApps\Media\Models\Media::class);
         Config::set('media-library.prefix', 'uploads');
         $image_generators = config('media-library.image_generators');
+        $image_generators[] = \RiseTechApps\Media\Features\Conversions\DefaultMediaConversion::class;
         Config::set('media-library.image_generators', $image_generators);
         Config::set('media-library.path_generator', DefaultPathGenerator::class);
         Media::observe(new MediaObserver);
-
 
         $this->setPrefixFilesystems();
     }
