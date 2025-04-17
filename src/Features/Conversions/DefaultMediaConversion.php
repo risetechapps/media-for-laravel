@@ -9,26 +9,30 @@ use Spatie\MediaLibrary\Conversions\ImageGenerators\ImageGenerator;
 
 class DefaultMediaConversion extends ImageGenerator
 {
-
     public function convert(string $file, ?Conversion $conversion = null): ?string
     {
+        try {
+            $pathInfo = pathinfo($file);
+            $dirName = $pathInfo['dirname'];
+            $fileName = $pathInfo['filename'];
+            $extension = $pathInfo['extension'];
 
-        $pathInfo = pathinfo($file);
-        $dirName = $pathInfo['dirname'];
-        $fileName = $pathInfo['filename'];
-        $extension = $pathInfo['extension'];
+            $dir = realpath(__DIR__ . '/../../../resources/conversions/default');
+            $default = $dir . DIRECTORY_SEPARATOR . $this->baseFile($extension);
+            $newFile = $dirName . '/' . $fileName . '.png';
 
-        $default = resource_path('conversions/default/' . $this->baseFile($extension));
-        $newFile = $dirName . '/' . $fileName . '.png';
+            file_put_contents($newFile, File::get($default));
 
-        file_put_contents($newFile, File::get($default));
-
-        return $newFile;
+            return $newFile;
+        } catch (\Exception $exception) {
+            return null;
+        }
     }
 
     public function requirementsAreInstalled(): bool
     {
-        return File::exists(resource_path('conversions/default'));
+        $dir = realpath(__DIR__ . '/../../../resources/conversions/default');
+        return File::exists($dir);
     }
 
     public function supportedExtensions(): Collection

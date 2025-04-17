@@ -18,7 +18,6 @@ class Media extends MediaLibrary
         'model_type',
         'model_id',
         'uuid',
-        'mime_type',
         'collection_name',
         'disk',
         'conversions_disk',
