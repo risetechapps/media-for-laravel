@@ -2,6 +2,7 @@
 
 namespace RiseTechApps\Media;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Routing\ResponseFactory;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,8 @@ class MediaServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../config/config.php' => config_path('media.php'),
             ], 'config');
+
+            $this->registerScheduler();
         }
 
         Config::set('media-library.disk_name', config('filesystems.default'));
@@ -121,5 +124,10 @@ class MediaServiceProvider extends ServiceProvider
                 return response()->json($response, 422);
             });
         }
+    }
+
+    private function registerScheduler():void
+    {
+        $schedule = $this->app->make(Schedule::class);
     }
 }
