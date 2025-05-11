@@ -68,9 +68,10 @@ class Media extends MediaLibrary
     {
         $disk = $this->disk;
         $path = $this->getPathRelativeToRoot();
+        $pathFolder = dirname($path);
 
-        if (Storage::disk($disk)->exists($path)) {
-            Storage::disk($disk)->delete($path);
+        if (Storage::disk($disk)->exists($pathFolder)) {
+            Storage::disk($disk)->deleteDirectory($pathFolder);
         }
     }
 
