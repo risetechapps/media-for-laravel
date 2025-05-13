@@ -6,6 +6,7 @@ use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use RiseTechApps\Media\Jobs\ManagerUploadsJob;
 use RiseTechApps\Media\Models\MediaUploadTemporary;
 
 class MediaUploadService
@@ -84,7 +85,7 @@ class MediaUploadService
         if (!is_null($uploads)) {
             $id = $uploads['id'];
 
-            if(Str::isUuid($id)){
+            if (Str::isUuid($id)) {
                 $temporaryUpload = MediaUploadTemporary::find($id);
                 if ($temporaryUpload) {
 
@@ -94,6 +95,33 @@ class MediaUploadService
                     $temporaryUpload->delete();
                 }
             }
+        }
+    }
+
+    public function handleUploadsJob(Model $model, array $uploads): void
+    {
+        dispatch(new ManagerUploadsJob($model, $uploads));
+    }
+
+    public function handleUploads(Model $model, array $uploads): void
+    {
+        $uploads = collect($uploads ?? []);
+
+        $mediaIdsToKeep = $uploads
+            ->filter(fn($item) => is_numeric($item['id']))
+            ->pluck('id')
+            ->map(fn($id) => (int)$id)
+            ->toArray();
+
+        $model->getMedia('uploads')
+            ->reject(fn($media) => in_array($media->id, $mediaIdsToKeep))
+            ->each->delete();
+
+        $newUploads = $uploads
+            ->filter(fn($item) => !is_numeric($item['id']));
+
+        foreach ($newUploads as $upload) {
+            $model->addMediaFromUrl($upload['preview'])->toMediaCollection($upload['collection']);
         }
     }
 }
