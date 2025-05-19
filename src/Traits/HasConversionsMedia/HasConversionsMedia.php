@@ -61,4 +61,38 @@ trait HasConversionsMedia
         return $this->hasOne(\RiseTechApps\Media\Models\Media::class, 'model_id', 'id')
             ->where('collection_name', 'uploads');
     }
+
+    public function uploads(): HasMany
+    {
+        return $this->hasMany(\RiseTechApps\Media\Models\Media::class, 'model_id', 'id')
+            ->where('collection_name', 'uploads');
+    }
+
+    public function getUploads(): array
+    {
+        try{
+            return $this->getMedia('uploads')->toArray();
+        }catch (\Exception $exception){
+            return [];
+        }
+    }
+
+    public function getIconSystem(): ?Media
+    {
+        try {
+            $icon = $this->getMedia('icon_system')->first();
+
+            if (is_null($icon)) {
+                return null;
+            }
+
+            return $icon;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+    public function iconSystem(): HasOne
+    {
+        return $this->hasOne(Media::class, 'model_id')->where('collection_name', 'icon');
+    }
 }
