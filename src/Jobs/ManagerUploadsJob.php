@@ -14,6 +14,9 @@ class ManagerUploadsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public $timeout = 900;
+
+
     protected Model $model;
     protected array $uploads;
 
