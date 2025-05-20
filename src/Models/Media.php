@@ -54,6 +54,16 @@ class Media extends MediaLibrary
         return url($this->getUrl($conversionName));
     }
 
+    public function getFullUrlTemporaryUpload(string $conversionName = ''): string
+    {
+        $disk = $this->disk;
+
+        if (config("filesystems.disks.${disk}.driver") === 's3') {
+            return $this->getTemporaryUrl(Carbon::now()->addDay(), $conversionName);
+        }
+        return url($this->getUrl($conversionName));
+    }
+
     public function getPreviewAttribute(): string
     {
         return $this->getFullUrl();
