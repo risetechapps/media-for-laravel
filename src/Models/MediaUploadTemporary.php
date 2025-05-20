@@ -2,6 +2,7 @@
 
 namespace RiseTechApps\Media\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Support\Facades\Storage;
@@ -29,7 +30,7 @@ class MediaUploadTemporary extends Model implements HasMedia
         $media->forceDelete();
     }
 
-    public function prunable(): \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
+    public function prunable(): Builder|MediaUploadTemporary
     {
         return static::where('created_at', '<=', now()->subDays(2));
     }
