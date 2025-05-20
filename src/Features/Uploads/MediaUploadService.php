@@ -122,6 +122,8 @@ class MediaUploadService
 
         foreach ($newUploads as $upload) {
             $model->addMediaFromUrl($upload['preview'])->toMediaCollection($upload['collection']);
+            unset($upload);
+            gc_collect_cycles();
         }
     }
 }
