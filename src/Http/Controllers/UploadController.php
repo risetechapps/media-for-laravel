@@ -25,7 +25,7 @@ class UploadController extends Controller
                     'name' => $file->getClientOriginalName(),
                     'type' => $dataFile->mime_type,
                     'size' => $dataFile->size,
-                    'preview' => $dataFile->getFullUrl(),
+                    'preview' => $dataFile->getFullUrlTemporaryUpload(),
                     'collection' => $request->input('collection')  ?? 'uploads',
                 ];
 
