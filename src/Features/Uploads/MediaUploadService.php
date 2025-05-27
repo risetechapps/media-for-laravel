@@ -33,7 +33,11 @@ class MediaUploadService
 
             DB::commit();
         } catch (Exception $e) {
+
             DB::rollBack();
+            logglyError()->performedOn(self::class)
+                ->withProperties(['model' => $model, 'type' => $type])
+                ->exception($exception)->withTags(['action' => 'handleUpload'])->log("Error processing temporary media");
         }
     }
 

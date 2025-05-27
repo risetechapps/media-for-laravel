@@ -6,11 +6,12 @@ use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use RiseTechApps\Monitoring\Traits\HasLoggly\HasLoggly;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as MediaLibrary;
 
 class Media extends MediaLibrary
 {
-    use SoftDeletes, Prunable;
+    use SoftDeletes, Prunable, HasLoggly;
 
     protected $fillable = ['order_column'];
 
@@ -88,6 +89,6 @@ class Media extends MediaLibrary
     public function prunable(): \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
     {
         return static::onlyTrashed()
-            ->where('deleted_at', '<=', now()->subDays(90));
+            ->where('deleted_at', '<=', now()->subDays(180));
     }
 }

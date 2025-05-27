@@ -17,7 +17,12 @@ trait HasPhotoProfile
             }
 
             return $photo->getFullUrl();
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
+
+            logglyError()->performedOn(self::class)
+                ->withProperties(['model' => $this])
+                ->exception($exception)->withTags(['action' => 'getPhotoProfileUrl'])->log("Error loading profile photo URL");
+
             return null;
         }
     }
@@ -32,7 +37,11 @@ trait HasPhotoProfile
             }
 
             return $photo;
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
+
+            logglyError()->performedOn(self::class)
+                ->withProperties(['model' => $this])
+                ->exception($exception)->withTags(['action' => 'getPhotoProfile'])->log("Error loading profile photo URL");
             return null;
         }
     }
