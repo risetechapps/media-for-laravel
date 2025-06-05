@@ -26,10 +26,7 @@ class DefaultMediaConversion extends ImageGenerator
             return $newFile;
         } catch (\Exception $exception) {
 
-            logglyError()->performedOn(self::class)
-                ->withProperties(['string' => $file, 'conversion' => $conversion])
-                ->exception($exception)->withTags(['action' => 'convert'])->log("Error generating standard image for upload");
-
+            logglyError()->withProperties(['string' => $file, 'conversion' => $conversion])->exception($exception)->log("Error generating standard image for upload");
             return null;
         }
     }

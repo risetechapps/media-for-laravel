@@ -73,9 +73,7 @@ trait HasConversionsMedia
         try{
             return $this->getMedia('uploads')->toArray();
         }catch (\Exception $exception){
-            logglyError()->performedOn(self::class)
-                ->withProperties(['model' => $this])
-                ->exception($exception)->withTags(['action' => 'getUploads'])->log("Error loading uploads");
+            logglyError()->performedOn($this)->exception($exception)->log("Error loading uploads");
             return [];
         }
     }
@@ -92,9 +90,7 @@ trait HasConversionsMedia
             return $icon;
         } catch (\Exception $exception) {
 
-            logglyError()->performedOn(self::class)
-                ->withProperties(['model' => $this])
-                ->exception($exception)->withTags(['action' => 'getIconSystem'])->log("Error loading system icon");
+            logglyError()->performedOn($this)->exception($exception)->log("Error loading system icon");
             return null;
         }
     }

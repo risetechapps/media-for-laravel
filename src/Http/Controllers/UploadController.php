@@ -29,20 +29,18 @@ class UploadController extends Controller
                     'collection' => $request->input('collection')  ?? 'uploads',
                 ];
 
-                logglyInfo()->withRequest($request)->performedOn(self::class)->withRequest($request)
-                    ->withTags(['action' => 'upload'])->log("Successful loaded upload");
+                logglyInfo()->withRequest($request)->performedOn($uploadTemporary)
+                    ->withTags(['data' => $data])->log("Successful loaded upload");
 
                 return response()->jsonSuccess($data);
             }
 
-            logglyError()->withRequest($request)->performedOn(self::class)->withRequest($request)
-                ->withTags(['action' => 'upload'])->log("Error uploading the file");
+            logglyError()->withRequest($request)->withRequest($request)->log("Error uploading the file");
 
             return response()->jsonGone();
         } catch (Exception $exception) {
 
-            logglyError()->withRequest($request)->performedOn(self::class)->withRequest($request)
-                ->exception($exception)->withTags(['action' => 'upload'])->log("Error uploading the file");
+            logglyError()->withRequest($request)->withRequest($request)->exception($exception)->log("Error uploading the file");
 
 
             return response()->jsonGone();

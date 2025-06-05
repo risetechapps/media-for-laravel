@@ -56,9 +56,7 @@ class DownloadImageUrlService
 
         }catch (\Exception $e){
 
-            logglyError()->performedOn(self::class)
-                ->withProperties(['url' => $url])
-                ->exception($exception)->withTags(['action' => 'get'])->log("Error charging URL to download media");
+            logglyError()->withProperties(['url' => $url])->withTags(['action' => 'get'])->log("Error charging URL to download media");
 
             return null;
         }

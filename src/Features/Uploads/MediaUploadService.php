@@ -35,9 +35,7 @@ class MediaUploadService
         } catch (Exception $e) {
 
             DB::rollBack();
-            logglyError()->performedOn(self::class)
-                ->withProperties(['model' => $model, 'type' => $type])
-                ->exception($exception)->withTags(['action' => 'handleUpload'])->log("Error processing temporary media");
+            logglyError()->performedOn($model)->withProperties(['type' => $type])->exception($exception)->log("Error processing temporary media");
         }
     }
 

@@ -16,9 +16,8 @@ class DefaultPathGenerator extends PathGenerator
 
             return $collection_name . '/' . $media->uuid;
         } catch (\Exception $exception) {
-            logglyError()->performedOn(self::class)
-                ->withProperties(['media' => $media])
-                ->exception($exception)->withTags(['action' => 'getBasePath'])->log("Error when generating file path");
+            logglyError()->performedOn($media)
+                ->exception($exception)->log("Error when generating file path");
         }
 
         return $media->uuid;
