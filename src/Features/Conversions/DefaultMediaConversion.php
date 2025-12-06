@@ -26,7 +26,7 @@ class DefaultMediaConversion extends ImageGenerator
             return $newFile;
         } catch (\Exception $exception) {
 
-            logglyError()->withProperties(['string' => $file, 'conversion' => $conversion])->exception($exception)->log("Error generating standard image for upload");
+//            logglyError()->withProperties(['string' => $file, 'conversion' => $conversion])->exception($exception)->log("Error generating standard image for upload");
             return null;
         }
     }
@@ -45,6 +45,7 @@ class DefaultMediaConversion extends ImageGenerator
             'ogg', 'flac', 'm4a', 'amr', 'mp4', 'avi', 'mov', 'mkv',
             'wmv', 'flv', 'webm', '3gp', 'zip', 'rar', '7z', 'tar',
             'gz', 'psd', 'ai', 'eps', 'indd', 'json', 'xml', 'sql',
+            'html'
         ]);
     }
 
@@ -56,11 +57,12 @@ class DefaultMediaConversion extends ImageGenerator
             'rtf' => 'txt.png', 'odt' => 'document.png', 'ods' => 'document.png', 'odp' => 'document.png',
             'mp3' => 'audio.png', 'wav' => 'audio.png', 'aac' => 'audio.png', 'ogg' => 'audio.png',
             'flac' => 'audio.png', 'm4a' => 'audio.png', 'amr' => 'audio.png',
-            'mp4' => 'audio.png', 'avi' => 'video.png', 'mov' => 'video.png', 'mkv' => 'video.png',
+            'mp4' => 'video.png', 'avi' => 'video.png', 'mov' => 'video.png', 'mkv' => 'video.png',
             'wmv' => 'video.png', 'flv' => 'video.png', 'webm' => 'video.png', '3gp' => 'video.png',
             'zip' => 'compactada.png', 'rar' => 'compactada.png', '7z' => 'compactada.png', 'tar' => 'compactada.png',
             'gz' => 'compactada.png', 'psd' => 'document.png', 'ai' => 'document.png', 'eps' => 'document.png',
             'indd' => 'document.png', 'json' => 'document.png', 'xml' => 'document.png', 'sql' => 'document.png',
+            'html' => 'document.png'
         ]);
 
         return $default->get($extension);
@@ -69,8 +71,8 @@ class DefaultMediaConversion extends ImageGenerator
     public function supportedMimeTypes(): Collection
     {
         return collect([
-            'image/jpeg', 'image/jpeg', 'image/png', 'image/gif', 'application/vnd.oasis.opendocument.text',
-            'image/tiff', 'image/tiff', 'image/bmp', 'image/svg+xml', 'application/vnd.oasis.opendocument.spreadsheet',
+            'image/jpeg', 'image/png', 'image/gif', 'application/vnd.oasis.opendocument.text',
+            'image/tiff', 'image/bmp', 'image/svg+xml', 'application/vnd.oasis.opendocument.spreadsheet',
             'image/webp', 'image/x-icon', 'application/pdf', 'application/msword',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-powerpoint',
@@ -81,7 +83,8 @@ class DefaultMediaConversion extends ImageGenerator
             'video/webm', 'video/3gpp', 'application/zip', 'application/vnd.rar', 'application/x-7z-compressed',
             'application/x-tar', 'application/gzip', 'image/vnd.adobe.photoshop', 'application/postscript',
             'application/postscript', 'application/x-indesign', 'text/csv', 'application/json',
-            'application/xml', 'application/sql'
+            'application/xml', 'application/sql','text/html', 'application/xhtml+xml', 'application/xml', 'text/xml',
+
         ]);
     }
 
@@ -91,6 +94,6 @@ class DefaultMediaConversion extends ImageGenerator
             return $this->defaultFile($extension);
         }
 
-        return '';
+        return 'document.png';
     }
 }
