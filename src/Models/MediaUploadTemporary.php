@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Support\Facades\Storage;
-use RiseTechApps\HasUuid\Traits\HasUuid\HasUuid;
+use RiseTechApps\HasUuid\Traits\HasUuid;
 use RiseTechApps\Media\Traits\HasConversionsMedia\HasConversionsMedia;
 use RiseTechApps\Monitoring\Traits\HasLoggly\HasLoggly;
 use Spatie\MediaLibrary\HasMedia;
