@@ -72,7 +72,8 @@ class Media extends MediaLibrary
 
     public function getThumbAttribute(): string
     {
-        return $this->getFullUrl('thumb');
+        return $this->getGeneratedConversions()->get('thumb') ? $this->getFullUrl('thumb')
+            : $this->getFullUrl('');
     }
 
     protected function pruning(): void
