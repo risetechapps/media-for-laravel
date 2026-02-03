@@ -49,7 +49,7 @@ class Media extends MediaLibrary
     {
         $disk = $this->disk;
 
-        if (config("filesystems.disks.${disk}.driver") === 's3') {
+        if (config("filesystems.disks.{$disk}.driver") === 's3') {
             return $this->getTemporaryUrl(Carbon::now()->addHour(), $conversionName);
         }
         return url($this->getUrl($conversionName));
@@ -59,7 +59,7 @@ class Media extends MediaLibrary
     {
         $disk = $this->disk;
 
-        if (config("filesystems.disks.${disk}.driver") === 's3') {
+        if (config("filesystems.disks.{$disk}.driver") === 's3') {
             return $this->getTemporaryUrl(Carbon::now()->addDay(), $conversionName);
         }
         return url($this->getUrl($conversionName));

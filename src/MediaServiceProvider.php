@@ -85,7 +85,7 @@ class MediaServiceProvider extends ServiceProvider
 
             $bar = empty($pathRoot) ? '' : '/';
 
-            $this->app['config']["filesystems.disks.{$disk}.root"] = $pathRoot .  $bar  . "${prefix}";
+            $this->app['config']["filesystems.disks.{$disk}.root"] = $pathRoot .  $bar  . "{$prefix}";
         }
     }
 
