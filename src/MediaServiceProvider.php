@@ -2,10 +2,6 @@
 
 namespace RiseTechApps\Media;
 
-use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Routing\ResponseFactory;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 use RiseTechApps\Media\Features\PathGenerator\DefaultPathGenerator;
 use RiseTechApps\Media\Models\Media;
@@ -15,31 +11,34 @@ class MediaServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap the application services.
+     * Este método é executado em cada requisição e comando.
      */
     public function boot(): void
     {
+        // Carrega as migrations da biblioteca.
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
+        // Lógica que só roda em comandos de console (ex: php artisan).
         if ($this->app->runningInConsole()) {
+            // Permite que o usuário publique o arquivo de configuração.
             $this->publishes([
                 __DIR__ . '/../config/config.php' => config_path('media.php'),
             ], 'config');
 
-            $this->registerScheduler();
         }
 
-        Config::set('media-library.disk_name', config('media.disk.name', config('filesystems.default')));
-        Config::set('media-library.media_model', \RiseTechApps\Media\Models\Media::class);
-        Config::set('media-library.prefix', config('media.disk.prefix', 'uploads'));
-        $image_generators = config('media-library.image_generators');
+        $this->registerPrefixedMediaDisk();
+
+        config(['media-library.disk_name' => 'media_prefixed_disk']);
+
+        config(['media-library.media_model' => \RiseTechApps\Media\Models\Media::class]);
+        config(['media-library.path_generator' => DefaultPathGenerator::class]);
+
+        $image_generators = config('media-library.image_generators', []);
         $image_generators[] = \RiseTechApps\Media\Features\Conversions\DefaultMediaConversion::class;
-        Config::set('media-library.image_generators', $image_generators);
-        Config::set('media-library.path_generator', DefaultPathGenerator::class);
+        config(['media-library.image_generators' => $image_generators]);
+
         Media::observe(new MediaObserver);
-
-        $this->setPrefixFilesystems();
-
-        $this->registerMacros();
     }
 
     /**
@@ -47,81 +46,33 @@ class MediaServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Register the main class to use with the facade
-        $this->app->singleton(Media::class, function () {
-            return new Media();
-        });
-
+        // Mescla a configuração padrão da biblioteca com a da aplicação.
         $this->mergeConfigFrom(__DIR__ . '/../config/config.php', 'media');
     }
 
-    public function setPrefixFilesystems(): void
+    /**
+     * Registra um disco de armazenamento dinâmico para a biblioteca.
+     *
+     * Esta função cria um novo disco em memória ('media_prefixed_disk') que é um clone
+     * do disco base da aplicação (ex: 's3' ou 'local'), mas com a adição de um
+     * prefixo no caminho 'root'. É extremamente performático e não interfere
+     * com outros discos da aplicação.
+     */
+    protected function registerPrefixedMediaDisk(): void
     {
-        $disks = $this->app['config']['filesystems.disks'];
-        $configuredDisks = $this->app['config']['media.disk.name'] ?? config('filesystems.default');
-        $targetDisks = is_array($configuredDisks) ? $configuredDisks : [$configuredDisks];
+        $baseDiskName = config('media.base_disk') ?? config('filesystems.default');
 
-        $exclude = $this->app['config']['media.disk.exclude'] ?? [];
-
-        $prefix = ($this->app['config']['media.disk.prefix'] ?? '') . DIRECTORY_SEPARATOR;
-
-        foreach ($targetDisks as $disk) {
-            if (!array_key_exists($disk, $disks) || in_array($disk, $exclude)) {
-                continue;
-            }
-
-            Storage::forgetDisk($disk);
-
-            $originalRoot = $this->app['config']["filesystems.disks.{$disk}"];
-            $this->pathsOriginal['disks'][$disk] = $originalRoot;
-
-            $pathRoot = $originalRoot['root'] ?? '';
-
-            $bar = empty($pathRoot) ? '' : '/';
-
-            $this->app['config']["filesystems.disks.{$disk}.root"] = $pathRoot . $bar . "{$prefix}";
-        }
-    }
-
-    protected function registerMacros(): void
-    {
-
-        if(!ResponseFactory::hasMacro('jsonSuccess')){
-            ResponseFactory::macro('jsonSuccess', function ($data = []) {
-                $response = ['success' => true];
-                if (!empty($data)) $response['data'] = $data;
-                return response()->json($response);
-            });
+        $baseDiskConfig = config("filesystems.disks.{$baseDiskName}");
+        if (!$baseDiskConfig) {
+            return;
         }
 
-        if(!ResponseFactory::hasMacro('jsonError')){
-            ResponseFactory::macro('jsonError', function ($data = null) {
-                $response = ['success' => false];
-                if (!is_null($data)) $response['message'] = $data;
-                return response()->json($response, 412);
-            });
-        }
+        $prefix = config('media.disk.prefix', 'uploads');
 
-        if(!ResponseFactory::hasMacro('jsonGone')) {
-            ResponseFactory::macro('jsonGone', function ($data = null) {
-                $response = ['success' => false];
-                if (!is_null($data)) $response['message'] = $data;
-                return response()->json($response, 410);
-            });
-        }
+        $originalRoot = $baseDiskConfig['root'] ?? '';
+        $separator = ($originalRoot && $prefix) ? '/' : '';
+        $baseDiskConfig['root'] = $originalRoot . $separator . $prefix;
 
-        if(!ResponseFactory::hasMacro('jsonNotValidated')) {
-            ResponseFactory::macro('jsonNotValidated', function ($message = null, $error = null) {
-                $response = ['success' => false];
-                if (!is_null($message)) $response['message'] = $message;
-
-                return response()->json($response, 422);
-            });
-        }
-    }
-
-    private function registerScheduler():void
-    {
-        $schedule = $this->app->make(Schedule::class);
+        config(['filesystems.disks.media_prefixed_disk' => $baseDiskConfig]);
     }
 }
