@@ -146,11 +146,14 @@ AWS_DEFAULT_REGION=us-east-1
 AWS_BUCKET=seu_bucket
 ```
 
-Para controlar a exclusão automática (prune), ajuste no arquivo `config/media.php`:
+Para controlar o prefixo e o disco utilizados pelo pacote, publique e ajuste no arquivo `config/media.php`:
 ```php
 return [
-    'temporary_expiration_days' => 2,
-    'marked_for_deletion_days' => 180,
+    'disk' => [
+        'name' => env('MEDIA_DISK', env('FILESYSTEM_DISK', 'local')),
+        'prefix' => env('STORAGE_PREFIX', ''),
+        'exclude' => [],
+    ],
 ];
 ```
 
