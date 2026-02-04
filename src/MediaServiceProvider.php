@@ -28,9 +28,9 @@ class MediaServiceProvider extends ServiceProvider
             $this->registerScheduler();
         }
 
-        Config::set('media-library.disk_name', config('filesystems.default'));
+        Config::set('media-library.disk_name', config('media.disk.name', config('filesystems.default')));
         Config::set('media-library.media_model', \RiseTechApps\Media\Models\Media::class);
-        Config::set('media-library.prefix', 'uploads');
+        Config::set('media-library.prefix', config('media.disk.prefix', 'uploads'));
         $image_generators = config('media-library.image_generators');
         $image_generators[] = \RiseTechApps\Media\Features\Conversions\DefaultMediaConversion::class;
         Config::set('media-library.image_generators', $image_generators);
@@ -58,25 +58,19 @@ class MediaServiceProvider extends ServiceProvider
     public function setPrefixFilesystems(): void
     {
         $disks = $this->app['config']['filesystems.disks'];
+        $configuredDisks = $this->app['config']['media.disk.name'] ?? config('filesystems.default');
+        $targetDisks = is_array($configuredDisks) ? $configuredDisks : [$configuredDisks];
 
-        $exclude = is_null($this->app['config']['media.disk.exclude']) ? [] : $this->app['config']['media.disk.exclude'];
+        $exclude = $this->app['config']['media.disk.exclude'] ?? [];
 
-        $prefix = $this->app['config']['media.disk.prefix'] . DIRECTORY_SEPARATOR;
+        $prefix = ($this->app['config']['media.disk.prefix'] ?? '') . DIRECTORY_SEPARATOR;
 
-        foreach ($disks as $key => $value) {
-
-            if(in_array($key, $exclude)){
+        foreach ($targetDisks as $disk) {
+            if (!array_key_exists($disk, $disks) || in_array($disk, $exclude)) {
                 continue;
             }
 
-            Storage::forgetDisk($key);
-        }
-
-        foreach ($disks as $disk => $value) {
-
-            if(in_array($disk, $exclude)){
-                continue;
-            }
+            Storage::forgetDisk($disk);
 
             $originalRoot = $this->app['config']["filesystems.disks.{$disk}"];
             $this->pathsOriginal['disks'][$disk] = $originalRoot;
@@ -85,7 +79,7 @@ class MediaServiceProvider extends ServiceProvider
 
             $bar = empty($pathRoot) ? '' : '/';
 
-            $this->app['config']["filesystems.disks.{$disk}.root"] = $pathRoot .  $bar  . "{$prefix}";
+            $this->app['config']["filesystems.disks.{$disk}.root"] = $pathRoot . $bar . "{$prefix}";
         }
     }
 
