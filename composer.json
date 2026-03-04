@@ -19,16 +19,16 @@
         }
     ],
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "illuminate/support": "^12.0",
         "league/flysystem-aws-s3-v3": "^3.0",
         "php-ffmpeg/php-ffmpeg": "^1.3",
         "risetechapps/has-uuid-for-laravel": "^1.0",
         "risetechapps/monitoring-for-laravel": "^1.0",
         "spatie/laravel-medialibrary": "^11.17",
-        "spatie/pdf-to-image": "^1.2",
+        "spatie/pdf-to-image": "^3.0",
         "tpetry/laravel-postgresql-enhanced": "^3.5",
-        "risetechapps/risetools": "1.7.0"
+        "risetechapps/risetools": "1.9.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

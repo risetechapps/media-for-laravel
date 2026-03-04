@@ -21,7 +21,7 @@ O **Media For Laravel** é um pacote que **estende as funcionalidades do [spatie
 
 ### 1️⃣ Requisitos
 Certifique-se de que seu projeto atende aos seguintes requisitos:
-- PHP >= 8.3
+- PHP >= 8.4
 - Laravel >= 12
 - Composer instalado
 
