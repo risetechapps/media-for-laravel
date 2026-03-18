@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('media_upload_temporaries', function (Blueprint $table) {
+        Schema::create('media_upload_temporaries', function ( $table) {
             $table->uuid('id')->primary();
             $table->timestamps();
         });
