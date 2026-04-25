@@ -20,6 +20,10 @@ class MediaUploadTemporary extends Model implements HasMedia
     {
         $media = $this->medias()->first();
 
+        if (!$media) {
+            return;
+        }
+
         $disk = $media->disk;
         $path = $media->getPathRelativeToRoot();
         $pathFolder = dirname($path);
