@@ -96,6 +96,6 @@ trait HasConversionsMedia
     }
     public function iconSystem(): HasOne
     {
-        return $this->hasOne(Media::class, 'model_id')->where('collection_name', 'icon');
+        return $this->hasOne(Media::class, 'model_id')->where('collection_name', 'icon_system');
     }
 }
