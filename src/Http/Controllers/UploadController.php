@@ -35,7 +35,7 @@ class UploadController extends Controller
                 return response()->jsonSuccess($data);
             }
 
-            logglyError()->withRequest($request)->withRequest($request)->log("Error uploading the file");
+            logglyWarning()->withRequest($request)->withRequest($request)->log("Error uploading the file");
 
             return response()->jsonGone();
         } catch (Exception $exception) {
