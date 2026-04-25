@@ -126,10 +126,11 @@ class MediaUploadService
         $newUploads = $uploads
             ->filter(fn($item) => !is_numeric($item['id']));
 
-        foreach ($newUploads as $upload) {
-            $model->addMediaFromUrl($upload['preview'])->toMediaCollection($upload['collection']);
-            unset($upload);
+        $newUploads->chunk(50)->each(function ($chunk) use ($model) {
+            foreach ($chunk as $upload) {
+                $model->addMediaFromUrl($upload['preview'])->toMediaCollection($upload['collection']);
+            }
             gc_collect_cycles();
-        }
+        });
     }
 }
