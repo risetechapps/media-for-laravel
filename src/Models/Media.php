@@ -27,7 +27,6 @@ class Media extends MediaLibrary
         'generated_conversions',
         'order_column',
         'responsive_images',
-        'custom_properties',
         'created_at',
         'updated_at',
         'original_url',
