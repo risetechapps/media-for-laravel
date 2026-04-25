@@ -11,13 +11,17 @@ use RiseTechApps\Media\Models\MediaUploadTemporary;
 
 class MediaUploadService
 {
-    public function handleUpload(Model $model, string $type): void
+    public function handleUpload(Model $model, string $type, array $uploads): void
     {
 
-        $uploads = request()->input($type);
+        if (!is_array($uploads) || empty($uploads)) {
+            return;
+        }
 
         DB::beginTransaction();
+
         try {
+
             $processedTemporaryIds = [];
 
             foreach ($uploads as $key => $upload) {
@@ -32,7 +36,7 @@ class MediaUploadService
             $this->removeUnusedMedia($model, array_column($uploads, 'id'), $type, $processedTemporaryIds);
 
             DB::commit();
-        } catch (Exception $e) {
+        } catch (Exception $exception) {
 
             DB::rollBack();
             logglyError()->performedOn($model)->withProperties(['type' => $type])->exception($exception)->log("Error processing temporary media");
