@@ -38,7 +38,19 @@ class DownloadImageUrlService
                     $imageName = uniqid() . '.' . $extension;
                     $imagePath = storage_path('app/temp/' . $imageName);
 
-                    $imageContent = file_get_contents($url);
+                    $context = stream_context_create([
+                        'http' => [
+                            'timeout' => 30,
+                            'follow_location' => 1,
+                            'max_redirects' => 3,
+                        ],
+                        'ssl' => [
+                            'verify_peer' => true,
+                            'verify_peer_name' => true,
+                        ],
+                    ]);
+
+                    $imageContent = file_get_contents($url, false, $context);
 
                     if ($imageContent !== false) {
                         File::put($imagePath, $imageContent);
