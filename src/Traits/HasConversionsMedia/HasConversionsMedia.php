@@ -21,6 +21,11 @@ trait HasConversionsMedia
             ->format('png')
             ->nonOptimized()
             ->queued();
+
+        // Permite adicionar conversões extras sem sobrescrever
+        if (method_exists($this, 'additionalMediaConversions')) {
+            $this->additionalMediaConversions($media);
+        }
     }
 
     public function registerMediaCollections(): void
@@ -37,6 +42,11 @@ trait HasConversionsMedia
 
         $this->addMediaCollection('uploads')
             ->withResponsiveImages();
+
+        // Permite adicionar coleções extras sem sobrescrever
+        if (method_exists($this, 'additionalMediaCollections')) {
+            $this->additionalMediaCollections();
+        }
     }
 
     public function medias(): HasMany
