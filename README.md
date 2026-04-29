@@ -43,6 +43,26 @@ class Client extends Model implements HasMedia
 }
 ```
 
+### 💎 Alternativa: Trait Unificada (`HasMediaSuite`)
+
+Para models que precisam de **todas** as funcionalidades de mídia (uploads gerais + foto de perfil), use a trait unificada:
+
+```php
+use Spatie\MediaLibrary\HasMedia;
+use RiseTechApps\Media\Traits\HasMediaSuite\HasMediaSuite;
+
+class User extends Model implements HasMedia
+{
+    use HasFactory, HasUuid;
+    use HasMediaSuite; // Inclui HasConversionsMedia + HasPhotoProfile
+}
+```
+
+> **Diferença:**
+> - `HasConversionsMedia` → Uploads gerais, ícones, coleções
+> - `HasPhotoProfile` → Apenas helpers para foto de perfil
+> - **`HasMediaSuite`** → **Ambas juntas** (recomendado para User, Company, Employee)
+
 ### 4️⃣ Registro das rotas
 ```php
 use Illuminate\Support\Facades\Route;
@@ -133,6 +153,176 @@ class ClientsResource extends JsonResource
     }
 }
 ```
+
+---
+
+## 🎨 Customização Avançada
+
+### Trait Personalizada (Adicionando Coleções/Conversões)
+
+Quando você precisa adicionar coleções ou conversões extras **sem perder** as definições padrão das traits, use os métodos `additional*`. Agora fica muito mais simples:
+
+```php
+<?php
+
+namespace App\Traits;
+
+use RiseTechApps\Media\Traits\HasMediaSuite\HasMediaSuite;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+trait HasUserMedia
+{
+    use HasMediaSuite;
+
+    // Usando additionalMediaCollections (muito mais limpo!)
+    public function additionalMediaCollections(): void
+    {
+        $this->addMediaCollection('documents')
+            ->singleFile()
+            ->acceptsMimeTypes(['application/pdf', 'application/msword']);
+    }
+
+    // Usando additionalMediaConversions (muito mais limpo!)
+    public function additionalMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('avatar')
+            ->width(150)
+            ->height(150)
+            ->sharpen(10)
+            ->format('png')
+            ->queued();
+    }
+}
+```
+
+Uso no Model:
+
+```php
+<?php
+
+namespace App\Models;
+
+use App\Traits\HasUserMedia;
+use Spatie\MediaLibrary\HasMedia;
+
+class User extends Authenticatable implements HasMedia
+{
+    use HasUserMedia; // Só isso!
+}
+```
+
+### ✅ Método Recomendado: `additionalMediaConversions()` e `additionalMediaCollections()`
+
+A forma **mais limpa** de adicionar conversões/coleções sem copiar código:
+
+```php
+<?php
+
+namespace App\Models;
+
+use RiseTechApps\Media\Traits\HasMediaSuite\HasMediaSuite;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class Product extends Model implements HasMedia
+{
+    use HasMediaSuite;
+
+    // Adiciona conversões extras (mantém 'thumb' da trait)
+    public function additionalMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('large')
+            ->width(1200)
+            ->height(800)
+            ->sharpen(10)
+            ->format('png')
+            ->queued();
+
+        $this->addMediaConversion('small')
+            ->width(100)
+            ->height(100)
+            ->queued();
+    }
+
+    // Adiciona coleções extras (mantém 'profile', 'icon_system', 'uploads' da trait)
+    public function additionalMediaCollections(): void
+    {
+        $this->addMediaCollection('gallery')
+            ->withResponsiveImages();
+
+        $this->addMediaCollection('manual')
+            ->singleFile()
+            ->acceptsMimeTypes(['application/pdf']);
+    }
+}
+```
+
+> ✅ **Vantagem:** Você só escreve o que é **adicional**, sem duplicar código!
+
+---
+
+### Sobrescrevendo no Model (quando precisa de controle total)
+
+Se precisar **remover ou alterar** conversões/coleções padrão, sobrescreva completamente:
+
+```php
+<?php
+
+namespace App\Models;
+
+use RiseTechApps\Media\Traits\HasConversionsMedia\HasConversionsMedia;
+use RiseTechApps\Media\Traits\HasPhotoProfile\HasPhotoProfile;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+class Product extends Model implements HasMedia
+{
+    use HasConversionsMedia, HasPhotoProfile;
+
+    public function registerMediaCollections(): void
+    {
+        // Copie da trait
+        $this->addMediaCollection('profile')
+            ->withResponsiveImages()
+            ->singleFile();
+        $this->addMediaCollection('icon_system')
+            ->withResponsiveImages()
+            ->singleFile();
+        $this->addMediaCollection('uploads')
+            ->withResponsiveImages();
+
+        // Adicione suas coleções
+        $this->addMediaCollection('gallery')
+            ->withResponsiveImages();
+        $this->addMediaCollection('manual')
+            ->singleFile()
+            ->acceptsMimeTypes(['application/pdf']);
+    }
+
+    public function registerMediaConversions(?Media $media = null): void
+    {
+        // Copie da trait
+        $this->addMediaConversion('thumb')
+            ->width(368)
+            ->height(232)
+            ->sharpen(10)
+            ->pdfPageNumber(1)
+            ->format('png')
+            ->nonOptimized()
+            ->queued();
+
+        // Adicione suas conversões
+        $this->addMediaConversion('large')
+            ->width(1200)
+            ->height(800)
+            ->sharpen(10)
+            ->format('png')
+            ->queued();
+    }
+}
+```
+
+> ⚠️ **Importante:** `parent::registerMediaConversions()` não funciona com traits. > > **Prefira usar `additionalMediaConversions()` e `additionalMediaCollections()`** - não precisa copiar nada!
 
 ---
 
