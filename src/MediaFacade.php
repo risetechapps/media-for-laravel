@@ -5,7 +5,7 @@ namespace RiseTechApps\Media;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @see \RiseTechApps\Media\Skeleton\SkeletonClass
+ * @see \RiseTechApps\Media\Media
  */
 class MediaFacade extends Facade
 {
