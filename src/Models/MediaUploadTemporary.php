@@ -37,6 +37,7 @@ class MediaUploadTemporary extends Model implements HasMedia
 
     public function prunable(): Builder|MediaUploadTemporary
     {
-        return static::where('created_at', '<=', now()->subDays(2));
+        $days = config('media.expiration.temporary_uploads', 2);
+        return static::where('created_at', '<=', now()->subDays($days));
     }
 }

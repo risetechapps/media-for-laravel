@@ -88,7 +88,8 @@ class Media extends MediaLibrary
 
     public function prunable(): \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Query\Builder
     {
+        $days = config('media.expiration.soft_deleted', 180);
         return static::onlyTrashed()
-            ->where('deleted_at', '<=', now()->subDays(180));
+            ->where('deleted_at', '<=', now()->subDays($days));
     }
 }
