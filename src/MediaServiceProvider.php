@@ -44,6 +44,7 @@ class MediaServiceProvider extends ServiceProvider
     /**
      * Register the application services.
      */
+    #[\Override]
     public function register(): void
     {
         // Mescla a configuração padrão da biblioteca com a da aplicação.

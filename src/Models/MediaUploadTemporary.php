@@ -26,7 +26,7 @@ class MediaUploadTemporary extends Model implements HasMedia
 
         $disk = $media->disk;
         $path = $media->getPathRelativeToRoot();
-        $pathFolder = dirname($path);
+        $pathFolder = dirname((string) $path);
 
         if (Storage::disk($disk)->exists($pathFolder)) {
             Storage::disk($disk)->deleteDirectory($pathFolder);

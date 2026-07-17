@@ -17,13 +17,7 @@ class ManagerUploadsJob implements ShouldQueue
     public $timeout = 900;
 
 
-    protected Model $model;
-    protected array $uploads;
-
-    public function __construct(Model $model, array $uploads)
-    {
-        $this->model = $model;
-        $this->uploads = $uploads;
+    public function __construct(protected Model $model, protected array $uploads){
     }
 
     public function handle(MediaUploadService $mediaUploadService): void

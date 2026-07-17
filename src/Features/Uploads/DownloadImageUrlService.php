@@ -66,7 +66,7 @@ class DownloadImageUrlService
             return $imagePath;
 
         } catch (\Exception $e) {
-            logglyError()->withProperties(['url' => $url])->withTags(['action' => 'get'])->log("Error downloading media");
+            logglyError()->exception($e)->withProperties(['url' => $url])->withTags(['action' => 'get'])->log("Error downloading media");
             return null;
         }
     }

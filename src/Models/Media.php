@@ -44,6 +44,7 @@ class Media extends MediaLibrary
         return $this;
     }
 
+    #[\Override]
     public function getFullUrl(string $conversionName = ''): string
     {
         $disk = $this->disk;

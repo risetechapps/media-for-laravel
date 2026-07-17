@@ -16,7 +16,7 @@ class UploadController extends Controller
             if ($request->hasFile('file')) {
 
                 $file = $request->file('file');
-                $uploadTemporary = (new MediaUploadTemporary())->create();
+                $uploadTemporary = new MediaUploadTemporary()->create();
                 $dataFile = $uploadTemporary->addMediaFromRequest('file')
                     ->toMediaCollection($request->input('collection') ?? 'uploads')->usingTemporaryUploads();
 

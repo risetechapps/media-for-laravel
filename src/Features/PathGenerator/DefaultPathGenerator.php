@@ -7,6 +7,7 @@ use \Spatie\MediaLibrary\Support\PathGenerator\DefaultPathGenerator as PathGener
 
 class DefaultPathGenerator extends PathGenerator
 {
+    #[\Override]
     protected function getBasePath(Media $media): string
     {
 
