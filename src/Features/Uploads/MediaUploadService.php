@@ -113,24 +113,43 @@ class MediaUploadService
     {
         $uploads = collect($uploads ?? []);
 
+        // Itens novos = ids de uploads temporários (UUID). Move do disco em vez de
+        // re-baixar pela URL assinada (evita egress, expiração da URL e transferência dupla).
+        $addedIds = [];
+
+        $uploads
+            ->filter(fn($item) => !is_numeric($item['id']))
+            ->chunk(50)
+            ->each(function ($chunk) use ($model, &$addedIds) {
+                foreach ($chunk as $upload) {
+                    $temporaryUpload = MediaUploadTemporary::find($upload['id']);
+                    if (!$temporaryUpload) {
+                        continue;
+                    }
+
+                    $media = $temporaryUpload->getFirstMedia('*');
+                    if ($media) {
+                        $newMedia = $model->addMediaFromDisk($media->getPathRelativeToRoot(), $media->disk)
+                            ->toMediaCollection($media->collection_name);
+                        $addedIds[] = $newMedia->getKey();
+                    }
+
+                    $temporaryUpload->delete();
+                }
+                gc_collect_cycles();
+            });
+
+        // Itens existentes = ids de mídia final (BIGINT). Preserva os já mantidos e os
+        // recém-anexados; remove da coleção 'uploads' apenas o que saiu da seleção.
         $mediaIdsToKeep = $uploads
             ->filter(fn($item) => is_numeric($item['id']))
             ->pluck('id')
             ->map(fn($id) => (int)$id)
+            ->merge($addedIds)
             ->toArray();
 
         $model->getMedia('uploads')
             ->reject(fn($media) => in_array($media->id, $mediaIdsToKeep))
             ->each->delete();
-
-        $newUploads = $uploads
-            ->filter(fn($item) => !is_numeric($item['id']));
-
-        $newUploads->chunk(50)->each(function ($chunk) use ($model) {
-            foreach ($chunk as $upload) {
-                $model->addMediaFromUrl($upload['preview'])->toMediaCollection($upload['collection']);
-            }
-            gc_collect_cycles();
-        });
     }
 }
