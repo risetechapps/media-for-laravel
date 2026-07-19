@@ -5,6 +5,9 @@ namespace RiseTechApps\Media;
 use Illuminate\Support\Facades\Facade;
 
 /**
+ * @method static void handleUploads(\Illuminate\Database\Eloquent\Model $model, array $uploads)
+ * @method static void handleProfile(\Illuminate\Database\Eloquent\Model $model)
+ *
  * @see \RiseTechApps\Media\Media
  */
 class MediaFacade extends Facade
