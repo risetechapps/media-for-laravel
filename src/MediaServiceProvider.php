@@ -2,6 +2,7 @@
 
 namespace RiseTechApps\Media;
 
+use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\ServiceProvider;
 use RiseTechApps\Media\Features\PathGenerator\DefaultPathGenerator;
 use RiseTechApps\Media\Models\Media;
@@ -39,6 +40,9 @@ class MediaServiceProvider extends ServiceProvider
         config(['media-library.image_generators' => $image_generators]);
 
         Media::observe(new MediaObserver);
+
+        // Registra o alias global 'Media' apontando para a Facade.
+        AliasLoader::getInstance()->alias('Media', \RiseTechApps\Media\MediaFacade::class);
     }
 
     /**
@@ -49,6 +53,11 @@ class MediaServiceProvider extends ServiceProvider
     {
         // Mescla a configuração padrão da biblioteca com a da aplicação.
         $this->mergeConfigFrom(__DIR__ . '/../config/config.php', 'media');
+
+        // Vincula a classe Media ao container sob a chave 'media' (usada pela Facade).
+        $this->app->singleton('media', function ($app) {
+            return $app->make(\RiseTechApps\Media\Media::class);
+        });
     }
 
     /**
@@ -61,14 +70,14 @@ class MediaServiceProvider extends ServiceProvider
      */
     protected function registerPrefixedMediaDisk(): void
     {
-        $baseDiskName = config('media.base_disk') ?? config('filesystems.default');
+        $baseDiskName = config('media.disk.name') ?? config('filesystems.default');
 
         $baseDiskConfig = config("filesystems.disks.{$baseDiskName}");
         if (!$baseDiskConfig) {
             return;
         }
 
-        $prefix = config('media.disk.prefix', 'uploads');
+        $prefix = config('media.disk.prefix', '');
 
         $originalRoot = $baseDiskConfig['root'] ?? '';
         $separator = ($originalRoot && $prefix) ? '/' : '';
