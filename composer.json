@@ -24,11 +24,11 @@
         "league/flysystem-aws-s3-v3": "^3.0",
         "php-ffmpeg/php-ffmpeg": "^1.3",
         "risetechapps/has-uuid-for-laravel": "^1.2",
-        "risetechapps/monitoring-for-laravel": "^3.0.0",
+        "risetechapps/monitoring-for-laravel": "^4.0.0",
         "spatie/laravel-medialibrary": "^11.17",
         "spatie/pdf-to-image": "^3.0",
-        "tpetry/laravel-postgresql-enhanced": "^3.5",
-        "risetechapps/risetools": "^2.0.0"
+        "tpetry/laravel-postgresql-enhanced": "^3.7.0",
+        "risetechapps/risetools": "^3.0.2"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -37,8 +37,9 @@
         "laravel/sail": "^1.29",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.0",
-        "pestphp/pest": "^2.0",
-        "pestphp/pest-plugin-laravel": "^2.0"
+        "orchestra/testbench": "^10.0",
+        "pestphp/pest": "^3.0",
+        "pestphp/pest-plugin-laravel": "^3.0"
     },
     "autoload": {
         "psr-4": {
