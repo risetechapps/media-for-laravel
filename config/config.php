@@ -7,9 +7,19 @@ return [
     'disk' => [
         'name' => env('MEDIA_DISK', env('FILESYSTEM_DISK', 'local')),
         'prefix' => env('STORAGE_PREFIX', ''),
-        'exclude' => [
+    ],
 
-        ]
+    /*
+    |--------------------------------------------------------------------------
+    | Upload
+    |--------------------------------------------------------------------------
+    |
+    | Tamanho máximo (em KB) aceito pelo endpoint de upload. O tipo de arquivo
+    | permitido é controlado por coleção via acceptsMimeTypes() no model.
+    |
+    */
+    'upload' => [
+        'max_size' => env('MEDIA_UPLOAD_MAX_SIZE', 51200),
     ],
 
     /*
