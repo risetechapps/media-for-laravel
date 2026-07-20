@@ -5,6 +5,7 @@ namespace RiseTechApps\Media\Models;
 use Illuminate\Database\Eloquent\Prunable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use RiseTechApps\Monitoring\Traits\HasLoggly\HasLoggly;
 use Spatie\MediaLibrary\MediaCollections\Models\Media as MediaLibrary;
@@ -50,7 +51,13 @@ class Media extends MediaLibrary
         $disk = $this->disk;
 
         if (config("filesystems.disks.{$disk}.driver") === 's3') {
-            return $this->getTemporaryUrl(Carbon::now()->addHour(), $conversionName);
+            // Reaproveita a URL assinada por 55min (a assinatura vale 60min). Evita
+            // re-assinar a cada serialização — N mídias numa lista = N assinaturas.
+            return Cache::remember(
+                "media:url:{$this->getKey()}:{$conversionName}",
+                now()->addMinutes(55),
+                fn() => $this->getTemporaryUrl(Carbon::now()->addHour(), $conversionName)
+            );
         }
         return url($this->getUrl($conversionName));
     }
