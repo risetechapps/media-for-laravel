@@ -75,7 +75,7 @@ Media::routes();
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use RiseTechApps\Media\Services\MediaUploadService;
+use RiseTechApps\Media\Features\Uploads\MediaUploadService;
 
 class ClientController extends Controller
 {
@@ -108,7 +108,7 @@ class ClientController extends Controller
 ## 📡 Rotas
 
 ### Upload de Arquivo
-- **Endpoint:** `/upload`
+- **Endpoint:** `/uploads`
 - **Método:** `POST`
 
 #### Exemplo de Requisição
@@ -342,7 +342,6 @@ return [
     'disk' => [
         'name' => env('MEDIA_DISK', env('FILESYSTEM_DISK', 'local')),
         'prefix' => env('STORAGE_PREFIX', ''),
-        'exclude' => [],
     ],
 ];
 ```
