@@ -2,32 +2,34 @@
 
 namespace RiseTechApps\Media\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
+use RiseTechApps\Media\Http\Resources\TemporaryUploadResource;
 use RiseTechApps\Media\Models\MediaUploadTemporary;
 
 class UploadController extends Controller
 {
     public function upload(Request $request): JsonResponse
     {
+        $request->validate([
+            'file'       => ['required', 'file', 'max:' . config('media.upload.max_size', 51200)],
+            'collection' => ['nullable', 'string', 'max:255'],
+        ]);
+
         try {
+
             if ($request->hasFile('file')) {
 
                 $file = $request->file('file');
+                $collection = $request->input('collection') ?? 'uploads';
                 $uploadTemporary = new MediaUploadTemporary()->create();
                 $dataFile = $uploadTemporary->addMediaFromRequest('file')
-                    ->toMediaCollection($request->input('collection') ?? 'uploads')->usingTemporaryUploads();
+                    ->toMediaCollection($collection)->usingTemporaryUploads();
 
-                $data = [
-                    'id' => $dataFile->model_id,
-                    'name' => $file->getClientOriginalName(),
-                    'type' => $dataFile->mime_type,
-                    'size' => $dataFile->size,
-                    'preview' => $dataFile->getFullUrlTemporaryUpload(),
-                    'collection' => $request->input('collection')  ?? 'uploads',
-                ];
+                $data = (new TemporaryUploadResource($dataFile, $file->getClientOriginalName(), $collection))
+                    ->resolve($request);
 
                 logglyInfo()->withRequest($request)->performedOn($uploadTemporary)
                     ->withTags(['data' => $data])->log("Successful loaded upload");
