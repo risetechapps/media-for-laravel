@@ -5,8 +5,8 @@ namespace RiseTechApps\Media;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @method static void handleUploads(\Illuminate\Database\Eloquent\Model $model, array $uploads)
- * @method static void handleProfile(\Illuminate\Database\Eloquent\Model $model)
+ * @method static void syncUploads(\Illuminate\Database\Eloquent\Model $model, array $uploads, string $collectionName = 'uploads')
+ * @method static void syncUploadsNow(\Illuminate\Database\Eloquent\Model $model, array $uploads, string $collectionName = 'uploads')
  *
  * @see \RiseTechApps\Media\Media
  */

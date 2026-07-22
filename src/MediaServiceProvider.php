@@ -3,48 +3,18 @@
 namespace RiseTechApps\Media;
 
 use Illuminate\Foundation\AliasLoader;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use RiseTechApps\Media\Features\PathGenerator\DefaultPathGenerator;
-use RiseTechApps\Media\Models\Media;
-use Spatie\MediaLibrary\MediaCollections\Models\Observers\MediaObserver;
+use RiseTechApps\Media\Contracts\PathGeneratorContract;
+use RiseTechApps\Media\Contracts\UrlGeneratorContract;
+use RiseTechApps\Media\Events\MediaHasBeenAdded;
+use RiseTechApps\Media\Listeners\GenerateConversions;
+use RiseTechApps\Media\Support\Disk\MediaDisk;
+use RiseTechApps\Media\Support\PathGenerator\DefaultPathGenerator;
+use RiseTechApps\Media\Support\Urls\DefaultUrlGenerator;
 
 class MediaServiceProvider extends ServiceProvider
 {
-    /**
-     * Bootstrap the application services.
-     * Este método é executado em cada requisição e comando.
-     */
-    public function boot(): void
-    {
-        // Carrega as migrations da biblioteca.
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
-
-        // Lógica que só roda em comandos de console (ex: php artisan).
-        if ($this->app->runningInConsole()) {
-            // Permite que o usuário publique o arquivo de configuração.
-            $this->publishes([
-                __DIR__ . '/../config/config.php' => config_path('media.php'),
-            ], 'config');
-
-        }
-
-        $this->registerPrefixedMediaDisk();
-
-        config(['media-library.disk_name' => 'media_prefixed_disk']);
-
-        config(['media-library.media_model' => \RiseTechApps\Media\Models\Media::class]);
-        config(['media-library.path_generator' => DefaultPathGenerator::class]);
-
-        $image_generators = config('media-library.image_generators', []);
-        $image_generators[] = \RiseTechApps\Media\Features\Conversions\DefaultMediaConversion::class;
-        config(['media-library.image_generators' => $image_generators]);
-
-        Media::observe(new MediaObserver);
-
-        // Registra o alias global 'Media' apontando para a Facade.
-        AliasLoader::getInstance()->alias('Media', \RiseTechApps\Media\MediaFacade::class);
-    }
-
     /**
      * Register the application services.
      */
@@ -54,35 +24,69 @@ class MediaServiceProvider extends ServiceProvider
         // Mescla a configuração padrão da biblioteca com a da aplicação.
         $this->mergeConfigFrom(__DIR__ . '/../config/config.php', 'media');
 
-        // Vincula a classe Media ao container sob a chave 'media' (usada pela Facade).
-        $this->app->singleton('media', function ($app) {
-            return $app->make(\RiseTechApps\Media\Media::class);
+        // Gerador de caminhos: trocável via config para layouts customizados.
+        $this->app->bind(PathGeneratorContract::class, function ($app) {
+            return $app->make(config('media.path_generator', DefaultPathGenerator::class));
         });
+
+        // Gerador de URLs: trocável via config para servir por CDN.
+        $this->app->bind(UrlGeneratorContract::class, function ($app) {
+            return $app->make(config('media.url_generator', DefaultUrlGenerator::class));
+        });
+
+        // Vincula a classe Media ao container sob a chave 'media' (usada pela Facade).
+        $this->app->singleton('media', fn ($app) => $app->make(Media::class));
+    }
+
+    /**
+     * Bootstrap the application services.
+     * Este método é executado em cada requisição e comando.
+     */
+    public function boot(): void
+    {
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+
+        $this->registerPrefixedMediaDisk();
+
+        // Lógica que só roda em comandos de console (ex: php artisan).
+        if ($this->app->runningInConsole()) {
+            // Permite que o usuário publique o arquivo de configuração.
+            $this->publishes([
+                __DIR__ . '/../config/config.php' => config_path('media.php'),
+            ], 'config');
+        }
+
+        Event::listen(MediaHasBeenAdded::class, GenerateConversions::class);
+
+        AliasLoader::getInstance()->alias('Media', MediaFacade::class);
     }
 
     /**
      * Registra um disco de armazenamento dinâmico para a biblioteca.
      *
-     * Esta função cria um novo disco em memória ('media_prefixed_disk') que é um clone
-     * do disco base da aplicação (ex: 's3' ou 'local'), mas com a adição de um
-     * prefixo no caminho 'root'. É extremamente performático e não interfere
-     * com outros discos da aplicação.
+     * Cria um disco em memória ('media_prefixed_disk') que é um clone do disco
+     * base da aplicação (ex: 's3' ou 'local'), com um prefixo acrescentado ao
+     * 'root'. Isola os arquivos de mídia dentro do storage já existente, sem
+     * exigir bucket novo e sem interferir nos demais discos.
      */
     protected function registerPrefixedMediaDisk(): void
     {
-        $baseDiskName = config('media.disk.name') ?? config('filesystems.default');
-
-        $baseDiskConfig = config("filesystems.disks.{$baseDiskName}");
-        if (!$baseDiskConfig) {
+        if (! MediaDisk::hasPrefix()) {
             return;
         }
 
-        $prefix = config('media.disk.prefix', '');
+        $baseConfig = config('filesystems.disks.' . MediaDisk::baseName());
 
-        $originalRoot = $baseDiskConfig['root'] ?? '';
-        $separator = ($originalRoot && $prefix) ? '/' : '';
-        $baseDiskConfig['root'] = $originalRoot . $separator . $prefix;
+        if (! $baseConfig) {
+            return;
+        }
 
-        config(['filesystems.disks.media_prefixed_disk' => $baseDiskConfig]);
+        $root = rtrim((string) ($baseConfig['root'] ?? ''), '/');
+
+        $baseConfig['root'] = $root === ''
+            ? MediaDisk::prefix()
+            : $root . '/' . MediaDisk::prefix();
+
+        config(['filesystems.disks.' . MediaDisk::PREFIXED => $baseConfig]);
     }
 }
