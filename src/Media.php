@@ -4,8 +4,8 @@ namespace RiseTechApps\Media;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
-use RiseTechApps\Media\Features\Uploads\MediaUploadService;
-use RiseTechApps\Media\Http\Controllers\UploadController;
+use RiseTechApps\Media\Http\UploadController;
+use RiseTechApps\Media\Support\Uploads\MediaUploadService;
 
 class Media
 {
@@ -13,27 +13,32 @@ class Media
     {
     }
 
+    /**
+     * Registra o endpoint de upload temporário.
+     *
+     * Middleware, prefixo e nomes ficam por conta de quem instala — passe o que
+     * precisar em $options (autenticação e limite de requisições, por exemplo).
+     */
     public static function routes(array $options = []): void
     {
-        Route::group($options, function (){
-
+        Route::group($options, function () {
             Route::post('/uploads', [UploadController::class, 'upload']);
         });
     }
 
     /**
-     * Despacha o processamento de uploads para o modelo em background.
+     * Vincula os uploads ao model, em background.
      */
-    public function handleUploads(Model $model, array $uploads): void
+    public function syncUploads(Model $model, array $uploads, string $collectionName = 'uploads'): void
     {
-        $this->uploadService->handleUploadsJob($model, $uploads);
+        $this->uploadService->syncQueued($model, $uploads, $collectionName);
     }
 
     /**
-     * Processa a foto de perfil do modelo a partir do request atual.
+     * Vincula os uploads ao model imediatamente.
      */
-    public function handleProfile(Model $model): void
+    public function syncUploadsNow(Model $model, array $uploads, string $collectionName = 'uploads'): void
     {
-        $this->uploadService->handleProfile($model);
+        $this->uploadService->sync($model, $uploads, $collectionName);
     }
 }
