@@ -4,18 +4,20 @@ namespace RiseTechApps\Media\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use RiseTechApps\Media\Models\Media;
 
 /**
- * Payload de resposta do endpoint /uploads (upload temporário).
+ * Resposta do endpoint de upload temporário.
  *
- * O `id` é o model_id do MediaUploadTemporary (UUID) — é o que o frontend guarda
- * e reenvia depois para o attach no model final. `name` e `collection` podem ser
- * informados explicitamente (nome original do arquivo / coleção do request);
- * na ausência, caem para os valores da própria mídia.
+ * O `id` devolvido é o do dono provisório (MediaUploadTemporary), não o da
+ * mídia: é esse valor que o cliente guarda e reenvia ao salvar o formulário,
+ * para que o arquivo seja movido ao model definitivo.
+ *
+ * @property Media $resource
  */
 class TemporaryUploadResource extends JsonResource
 {
-    public function __construct($resource, protected ?string $name = null, protected ?string $collection = null)
+    public function __construct($resource, protected ?string $name = null)
     {
         parent::__construct($resource);
     }
@@ -23,12 +25,12 @@ class TemporaryUploadResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'         => $this->resource->model_id,
-            'name'       => $this->name ?? $this->resource->name,
-            'type'       => $this->resource->mime_type,
-            'size'       => $this->resource->size,
-            'preview'    => $this->resource->getFullUrlTemporaryUpload(),
-            'collection' => $this->collection ?? $this->resource->collection_name,
+            'id' => $this->resource->model_id,
+            'name' => $this->name ?? $this->resource->name,
+            'type' => $this->resource->mime_type,
+            'size' => $this->resource->size,
+            'preview' => $this->resource->getFullUrl(),
+            'collection' => $this->resource->collection_name,
         ];
     }
 }
