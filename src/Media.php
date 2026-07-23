@@ -5,12 +5,49 @@ namespace RiseTechApps\Media;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Route;
 use RiseTechApps\Media\Http\UploadController;
+use RiseTechApps\Media\Support\Quota\Quota;
+use RiseTechApps\Media\Support\Reports\StorageReport;
+use RiseTechApps\Media\Support\Scope\MediaScopeManager;
 use RiseTechApps\Media\Support\Uploads\MediaUploadService;
 
 class Media
 {
     public function __construct(protected MediaUploadService $uploadService)
     {
+    }
+
+    /**
+     * Ponto de entrada dos relatórios de storage (global, ignora o escopo).
+     *
+     *   Media::storage()->total();
+     *   Media::storage()->byCollection();
+     *   Media::storage()->forModel($user);
+     */
+    public function storage(): StorageReport
+    {
+        return app(StorageReport::class);
+    }
+
+    /**
+     * Cota do contexto atual (respeita o escopo do resolver).
+     *
+     *   Media::quota()->usage();
+     *   Media::quota()->remaining();
+     *   Media::quota()->exceeded();
+     */
+    public function quota(): Quota
+    {
+        return app(Quota::class);
+    }
+
+    /**
+     * Define o resolver de contexto em runtime, sem precisar de config.
+     *
+     *   Media::resolveScopeUsing(fn () => ['sub_tenant_id' => 42]);
+     */
+    public function resolveScopeUsing(callable $resolver): void
+    {
+        app(MediaScopeManager::class)->resolveUsing($resolver);
     }
 
     /**

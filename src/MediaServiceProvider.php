@@ -2,15 +2,22 @@
 
 namespace RiseTechApps\Media;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use RiseTechApps\Media\Models\MediaUploadTemporary;
+use RiseTechApps\Media\Contracts\MediaScopeResolver;
 use RiseTechApps\Media\Contracts\PathGeneratorContract;
+use RiseTechApps\Media\Contracts\QuotaResolver;
 use RiseTechApps\Media\Contracts\UrlGeneratorContract;
 use RiseTechApps\Media\Events\MediaHasBeenAdded;
 use RiseTechApps\Media\Listeners\GenerateConversions;
 use RiseTechApps\Media\Support\Disk\MediaDisk;
 use RiseTechApps\Media\Support\PathGenerator\DefaultPathGenerator;
+use RiseTechApps\Media\Support\Quota\Quota;
+use RiseTechApps\Media\Support\Reports\StorageReport;
+use RiseTechApps\Media\Support\Scope\MediaScopeManager;
 use RiseTechApps\Media\Support\Urls\DefaultUrlGenerator;
 
 class MediaServiceProvider extends ServiceProvider
@@ -33,6 +40,24 @@ class MediaServiceProvider extends ServiceProvider
         $this->app->bind(UrlGeneratorContract::class, function ($app) {
             return $app->make(config('media.url_generator', DefaultUrlGenerator::class));
         });
+
+        // Relatórios de storage: stateless, reaproveitável.
+        $this->app->singleton(StorageReport::class);
+
+        // Escopo (tenancy desacoplado): o resolver do consumidor, se configurado,
+        // habilita o particionamento. Sem ele, o package roda sem tenancy.
+        if ($scopeResolver = config('media.scope.resolver')) {
+            $this->app->bind(MediaScopeResolver::class, $scopeResolver);
+        }
+
+        $this->app->singleton(MediaScopeManager::class);
+
+        // Cota: o resolver de limite do consumidor, se configurado.
+        if ($quotaResolver = config('media.quota.resolver')) {
+            $this->app->bind(QuotaResolver::class, $quotaResolver);
+        }
+
+        $this->app->singleton(Quota::class);
 
         // Vincula a classe Media ao container sob a chave 'media' (usada pela Facade).
         $this->app->singleton('media', fn ($app) => $app->make(Media::class));
@@ -59,6 +84,33 @@ class MediaServiceProvider extends ServiceProvider
         Event::listen(MediaHasBeenAdded::class, GenerateConversions::class);
 
         AliasLoader::getInstance()->alias('Media', MediaFacade::class);
+
+        $this->schedulePrune();
+    }
+
+    /**
+     * Agenda a limpeza diária dos models do package.
+     *
+     * O model:prune não descobre models de package (não estão em app/Models),
+     * então as classes são passadas explicitamente. Roda só se o cron do
+     * Laravel (schedule:run) estiver ativo.
+     */
+    protected function schedulePrune(): void
+    {
+        if (! config('media.prune.enabled', true)) {
+            return;
+        }
+
+        $this->app->booted(function () {
+            $schedule = $this->app->make(Schedule::class);
+
+            $schedule->command('model:prune', [
+                '--model' => [
+                    \RiseTechApps\Media\Models\Media::class,
+                    MediaUploadTemporary::class,
+                ],
+            ])->dailyAt((string) config('media.prune.time', '02:00'));
+        });
     }
 
     /**

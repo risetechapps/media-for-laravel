@@ -41,6 +41,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | CDN
+    |--------------------------------------------------------------------------
+    |
+    | Com `base` preenchido, getFullUrl() passa a servir a URL pública do CDN em
+    | vez de assinar no S3 — sem trocar o url_generator. Vazio = desligado.
+    |
+    | include_disk_root define a montagem da chave conforme para onde o CDN
+    | aponta:
+    |   true  → raiz do bucket: chave = root do disco + path da mídia.
+    |   false → raiz do disco:  chave = só o path da mídia.
+    |
+    */
+    'cdn' => [
+        'base' => env('MEDIA_URL_GENERATOR_CDN_BASE'),
+        'include_disk_root' => env('MEDIA_CDN_INCLUDE_DISK_ROOT', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Conversões
     |--------------------------------------------------------------------------
     |
@@ -117,6 +136,47 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Escopo (tenancy desacoplado)
+    |--------------------------------------------------------------------------
+    |
+    | Resolver de contexto para particionar a mídia sem o package conhecer nada
+    | de tenancy. Implemente MediaScopeResolver: devolve um mapa chave→valor
+    | (ex.: ['sub_tenant_id' => 42]) que é carimbado em custom_properties._scope
+    | na criação e filtrado em toda consulta (global scope fail-closed).
+    |
+    | null = desligado: o package roda sem particionar nada.
+    |
+    */
+    'scope' => [
+        'resolver' => null, // ex.: App\Media\TenancyMediaScope::class
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cota de storage
+    |--------------------------------------------------------------------------
+    |
+    | Duas formas de definir o limite, nesta prioridade:
+    |
+    |   1. resolver — dinâmico, por contexto. Implemente QuotaResolver; devolve
+    |      o limite em bytes (ou null p/ ilimitado). Vence sempre quando setado.
+    |   2. default  — limite fixo em bytes, igual para todos. Usado quando não
+    |      há resolver. null = ilimitado.
+    |
+    | O upload é barrado antes de gravar quando uso + tamanho do arquivo
+    | ultrapassaria o limite.
+    |
+    */
+    'quota' => [
+        'resolver' => null, // ex.: App\Media\PlanQuota::class
+
+        // Limite fixo (fallback do resolver). Aceita bytes (5368709120) ou
+        // string legível ('5GB', '500 MB'). null = ilimitado.
+        'default' => env('MEDIA_QUOTA_DEFAULT'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Tempo de expiração
     |--------------------------------------------------------------------------
     |
@@ -127,5 +187,26 @@ return [
     'expiration' => [
         'temporary_uploads' => env('MEDIA_TEMPORARY_UPLOADS_EXPIRATION_DAYS', 2),
         'soft_deleted' => env('MEDIA_SOFT_DELETED_EXPIRATION_DAYS', 180),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Limpeza automática (prune)
+    |--------------------------------------------------------------------------
+    |
+    | Agenda o model:prune diário para os models do package: uploads temporários
+    | abandonados e mídia na lixeira além do prazo de `expiration`. Como são
+    | models de package, o model:prune não os descobre sozinho — por isso o
+    | agendamento é registrado aqui, com as classes explícitas.
+    |
+    | Requer o cron do Laravel ativo (`php artisan schedule:run`). Desligue para
+    | agendar por conta própria.
+    |
+    */
+    'prune' => [
+        'enabled' => env('MEDIA_PRUNE_ENABLED', true),
+
+        // Horário do prune diário (formato HH:MM).
+        'time' => env('MEDIA_PRUNE_TIME', '02:00'),
     ],
 ];
