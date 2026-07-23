@@ -3,6 +3,40 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), e este projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) (SemVer).
 
+## [3.0.0] - 2026-07-23
+
+Reescrita completa do pacote, **removendo o `spatie/laravel-medialibrary`**. O motivo central: o Spatie contabiliza apenas o arquivo original (`media.size`) — conversões e imagens responsivas ocupam storage mas escapam da conta. Esta versão registra **cada arquivo físico** e soma os bytes de verdade.
+
+> **BREAKING CHANGE.** API nova e incompatível com a 1.x. Migração obrigatória dos models consumidores.
+
+### Adicionado
+- **Contabilidade exata de bytes**: tabela `media_files` (uma linha por arquivo físico — `original`, `conversion:{nome}`, `responsive:{largura}`) e coluna `media.total_size` com a soma real ocupada. `MediaFilesystem` é o único caminho de bytes: toda escrita registra e contabiliza, toda remoção reverte.
+- **Trait `InteractsWithMedia`** + contrato `MediaContract`: `addMedia`/`addMediaFromRequest`/`addMediaFromDisk`/`addMediaFromUrl`, coleções e conversões declarativas.
+- **Coleções** (`MediaCollection`): `singleFile`, `acceptsMimeTypes`, `acceptsFile`, `useDisk`, fallback URL/path, `withResponsiveImages`.
+- **Conversões** com cadeia de geradores (imagem, PDF, vídeo, ícone), enfileiráveis. `Conversion` fluente com `fit`, `format`, `quality`, `sharpen`, `background`, `optimize()`, `orientation()`, `pdfPageNumber`.
+- **Ícones dedicados** por tipo, incluindo `svg`/`ico` (IMG) e código (`json`, `xml`, `html`, `php`, …). Suporte a **HEIC/HEIF** (rasteriza via Imagick).
+- **Imagens responsivas** (`srcset`), desligáveis por config: `getSrcset()`/`getSrcsetArray()`, variante `responsive:{largura}` contabilizada.
+- **URL trocável** (`UrlGeneratorContract` + `DefaultUrlGenerator`) com cache de URL assinada S3 e **suporte a CDN built-in** via `media.cdn.base`.
+- **Relatórios de storage** (`StorageReport`, facade `Media::storage()`): `total`, `byCollection`, `byModelType`, `forModel`, `humanize`. Value object `Size` (`of`/`parse`/`kb/mb/gb`/`forHumans`).
+- **Escopo por contexto** (tenancy desacoplado): `MediaScopeResolver`, carimbo em `custom_properties._scope`, global scope **fail-closed**, `Media::unscoped()`, índice GIN. Sem coluna `tenant_id` e sem depender de nenhum pacote de tenancy.
+- **Cota de storage**: `QuotaResolver` ou `media.quota.default` (bytes ou string legível `'10GB'`), barrando o upload antes de gravar (`StorageQuotaExceeded`). Facade `Media::quota()` (`usage`/`limit`/`remaining`/`exceeded`/`percentUsed`).
+- **Agendamento de prune** dos models do pacote (uploads temporários e mídia em lixeira), configurável (`media.prune`).
+- **Suíte de testes** (Pest): invariante de bytes, cota, escopo fail-closed, prune, uploads temporários e validação.
+
+### Alterado
+- **Chave primária UUID** e soft delete em `media`; `total_size` denormalizado.
+- **Dependências**: removido `spatie/laravel-medialibrary`; `spatie/image`, `spatie/temporary-directory` e `symfony/mime` promovidos a diretos.
+- **Config** reorganizada: `disk`, `path_generator`, `url_generator`/`url`/`cdn`, `conversions`, `responsive_images`, `scope`, `quota`, `expiration`, `prune`.
+
+### Removido
+- **`spatie/laravel-medialibrary`** e toda a camada baseada nele.
+- Traits `HasConversionsMedia`, `HasPhotoProfile`, `HasMediaSuite` — substituídas por `InteractsWithMedia`.
+- `DownloadImageUrlService` e serviços/controllers do fluxo antigo.
+- Coluna `generated_conversions` (derivada agora de `media_files`).
+
+### Documentação
+- README reescrito para a API nova, incluindo escopo, cota, CDN built-in e prune em multi-tenant.
+
 ## [1.4.0] - 2026-04-29
 
 ### Adicionado
