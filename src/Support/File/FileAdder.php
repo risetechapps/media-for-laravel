@@ -8,10 +8,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RiseTechApps\Media\Events\MediaHasBeenAdded;
 use RiseTechApps\Media\Exceptions\FileUnacceptableForCollection;
+use RiseTechApps\Media\Exceptions\StorageQuotaExceeded;
 use RiseTechApps\Media\Models\Media;
 use RiseTechApps\Media\Support\Collections\MediaCollection;
 use RiseTechApps\Media\Support\Disk\MediaDisk;
 use RiseTechApps\Media\Support\Filesystem\MediaFilesystem;
+use RiseTechApps\Media\Support\Quota\Quota;
+use RiseTechApps\Media\Support\Scope\MediaScopeManager;
 
 /**
  * Builder fluente que anexa um arquivo a um model.
@@ -144,6 +147,24 @@ class FileAdder
             $this->generateResponsiveImages = true;
         }
 
+        $size = $this->resolveSize();
+
+        // Cota: barra antes de gravar. Um arquivo que estouraria o limite do
+        // contexto atual não pode deixar byte em disco nem registro no banco.
+        $quota = app(Quota::class);
+
+        if (! $quota->canFit($size)) {
+            throw new StorageQuotaExceeded($quota->limit() ?? 0, $quota->usage(), $size);
+        }
+
+        // Carimba o contexto atual (tenancy) em custom_properties._scope. Vazio
+        // quando não há contexto — a mídia fica global (sem escopo).
+        $customProperties = $this->customProperties;
+
+        if (($scope = app(MediaScopeManager::class)->context()) !== []) {
+            $customProperties[MediaScopeManager::KEY] = $scope;
+        }
+
         $fileName = $this->sanitizeFileName($this->fileName ?? $this->resolveOriginalName());
 
         $media = new Media([
@@ -153,9 +174,9 @@ class FileAdder
             'mime_type' => $mimeType,
             'disk' => $disk,
             'conversions_disk' => $this->conversionsDisk,
-            'size' => $this->resolveSize(),
+            'size' => $size,
             'manipulations' => $this->manipulations,
-            'custom_properties' => $this->customProperties,
+            'custom_properties' => $customProperties,
             // 'pending' sinaliza ao listener que esta mídia pediu variantes
             // responsivas. A geração ainda depende do master switch em config.
             // Após gerar, o campo passa a guardar as larguras produzidas.

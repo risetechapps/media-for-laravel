@@ -11,6 +11,7 @@ use DateTimeInterface;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use RiseTechApps\Media\Contracts\UrlGeneratorContract;
+use RiseTechApps\Media\Models\Scopes\MediaScope;
 use RiseTechApps\Media\Support\Filesystem\MediaFilesystem;
 
 class Media extends Model
@@ -52,11 +53,26 @@ class Media extends Model
      */
     protected static function booted(): void
     {
+        // Particiona a mídia pelo contexto do resolver, quando registrado. No-op
+        // sem resolver. O package não sabe o que o contexto significa.
+        static::addGlobalScope(new MediaScope());
+
         static::deleting(function (self $media) {
             if ($media->isForceDeleting()) {
                 app(MediaFilesystem::class)->deleteAllFiles($media);
             }
         });
+    }
+
+    /**
+     * Ignora o particionamento por contexto — enxerga a mídia de todos os
+     * escopos. Para relatórios e operações administrativas.
+     *
+     *   Media::unscoped()->get();
+     */
+    public function scopeUnscoped(Builder $query): Builder
+    {
+        return $query->withoutGlobalScope(MediaScope::class);
     }
 
     // ---------------------------------------------------------------- relações
