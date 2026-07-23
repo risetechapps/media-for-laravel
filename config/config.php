@@ -60,6 +60,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Defaults da trait HasMediaSuite
+    |--------------------------------------------------------------------------
+    |
+    | Valores usados pela trait HasMediaSuite quando o model não sobrescreve.
+    | Ajuste global aqui; ajuste por model sobrescrevendo os métodos default*()
+    | na classe. `conversion.queued` = true assume worker; false roda no request.
+    |
+    */
+    'defaults' => [
+        'collection' => env('MEDIA_DEFAULT_COLLECTION', 'uploads'),
+        'responsive_images' => env('MEDIA_DEFAULT_RESPONSIVE_IMAGES', false),
+
+        'conversion' => [
+            'name' => env('MEDIA_DEFAULT_CONVERSION_NAME', 'thumb'),
+            'width' => env('MEDIA_DEFAULT_CONVERSION_WIDTH', 368),
+            'height' => env('MEDIA_DEFAULT_CONVERSION_HEIGHT', 232),
+            'format' => env('MEDIA_DEFAULT_CONVERSION_FORMAT', 'webp'),
+            'quality' => env('MEDIA_DEFAULT_CONVERSION_QUALITY', 80),
+            'queued' => env('MEDIA_DEFAULT_CONVERSION_QUEUED', true),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Conversões
     |--------------------------------------------------------------------------
     |

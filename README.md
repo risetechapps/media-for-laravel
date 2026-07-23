@@ -96,6 +96,45 @@ class Client extends Model implements MediaContract
 }
 ```
 
+### Atalho: `HasMediaSuite`
+
+Para o caso comum (uma coleção padrão + uma conversão `thumb`), a trait `HasMediaSuite` já traz tudo pronto — sem repetir o boilerplate:
+
+```php
+use RiseTechApps\Media\Contracts\MediaContract;
+use RiseTechApps\Media\Traits\HasMediaSuite\HasMediaSuite;
+
+class Client extends Model implements MediaContract
+{
+    use HasMediaSuite;
+}
+```
+
+Os defaults saem de `config('media.defaults')` (coleção `uploads`, thumb 368×232 webp q80, `orientation()` + `optimize()`, enfileirada). Sem prender você:
+
+```php
+class Client extends Model implements MediaContract
+{
+    use HasMediaSuite;
+
+    // Adiciona sem perder os defaults:
+    protected function additionalMediaCollections(): void
+    {
+        $this->addMediaCollection('documentos')->singleFile();
+    }
+
+    protected function additionalMediaConversions(?Media $media = null): void
+    {
+        $this->addMediaConversion('preview')->width(1024)->queued();
+    }
+
+    // Ou ajusta um default pontual:
+    protected function defaultConversionFormat(): string { return 'png'; }
+}
+```
+
+> Sem worker? Defina `MEDIA_DEFAULT_CONVERSION_QUEUED=false` (ou sobrescreva `defaultConversionQueued()`) — a conversão roda no próprio request. Para trocar tudo, sobrescreva `registerMediaCollections()`/`registerMediaConversions()` normalmente.
+
 ---
 
 ## 📤 Adicionando mídia
@@ -471,6 +510,9 @@ Artisan::call('model:prune', ['--model' => [
 | `cdn.include_disk_root` | `MEDIA_CDN_INCLUDE_DISK_ROOT` | `true` | Inclui o root do disco na chave do CDN |
 | `conversions.generators` | — | Image, Pdf, Video, FileIcon | Cadeia de geradores |
 | `conversions.video_frame_second` | `MEDIA_VIDEO_FRAME_SECOND` | `1` | Segundo do quadro do vídeo |
+| `defaults.collection` | `MEDIA_DEFAULT_COLLECTION` | `uploads` | Coleção padrão do `HasMediaSuite` |
+| `defaults.conversion.*` | `MEDIA_DEFAULT_CONVERSION_*` | thumb 368×232 webp q80 | Conversão padrão do `HasMediaSuite` |
+| `defaults.conversion.queued` | `MEDIA_DEFAULT_CONVERSION_QUEUED` | `true` | `false` roda a conversão no request |
 | `responsive_images.enabled` | `MEDIA_RESPONSIVE_IMAGES` | `false` | Master switch do srcset |
 | `responsive_images.widths` | — | `[1920…320]` | Larguras alvo |
 | `scope.resolver` | — | `null` | `MediaScopeResolver` (tenancy) |
