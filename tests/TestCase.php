@@ -20,7 +20,6 @@ class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         return [
-            \Spatie\MediaLibrary\MediaLibraryServiceProvider::class,
             \Tpetry\PostgresqlEnhanced\PostgresqlEnhancedServiceProvider::class,
             MediaServiceProvider::class,
         ];
