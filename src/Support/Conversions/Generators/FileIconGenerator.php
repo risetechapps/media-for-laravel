@@ -25,6 +25,11 @@ class FileIconGenerator implements ImageGeneratorContract
         'wmv' => 'video.png', 'flv' => 'video.png', 'webm' => 'video.png', '3gp' => 'video.png',
         'zip' => 'compactada.png', 'rar' => 'compactada.png', '7z' => 'compactada.png',
         'tar' => 'compactada.png', 'gz' => 'compactada.png',
+        'svg' => 'image.png', 'ico' => 'image.png',
+        'json' => 'code.png', 'xml' => 'code.png', 'html' => 'code.png', 'htm' => 'code.png',
+        'css' => 'code.png', 'js' => 'code.png', 'ts' => 'code.png', 'php' => 'code.png',
+        'yml' => 'code.png', 'yaml' => 'code.png', 'md' => 'code.png', 'sql' => 'code.png',
+        'sh' => 'code.png', 'ini' => 'code.png', 'env' => 'code.png', 'log' => 'code.png',
     ];
 
     protected const FALLBACK = 'document.png';
