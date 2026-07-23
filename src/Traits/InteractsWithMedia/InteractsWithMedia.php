@@ -13,6 +13,7 @@ use RiseTechApps\Media\Support\Collections\MediaCollection;
 use RiseTechApps\Media\Support\Conversions\Conversion;
 use RiseTechApps\Media\Support\File\FileAdder;
 use RiseTechApps\Media\Support\File\RemoteFile;
+use RiseTechApps\Media\Support\Reports\StorageReport;
 use Symfony\Component\Mime\MimeTypes;
 
 /**
@@ -59,6 +60,27 @@ trait InteractsWithMedia
     public function media(): MorphMany
     {
         return $this->morphMany(Media::class, 'model');
+    }
+
+    // ---------------------------------------------------------- contabilidade
+
+    /**
+     * Bytes de storage ocupados por este model, opcionalmente numa coleção.
+     * Inclui mídia na lixeira por padrão — ela ainda ocupa disco até ser podada.
+     */
+    public function mediaStorageUsage(?string $collectionName = null, bool $includeTrashed = true): int
+    {
+        return app(StorageReport::class)->forModel($this, $collectionName, $includeTrashed);
+    }
+
+    /**
+     * Bytes deste model quebrados por coleção: ['avatars' => 1234, ...].
+     *
+     * @return array<string, int>
+     */
+    public function mediaStorageByCollection(bool $includeTrashed = true): array
+    {
+        return app(StorageReport::class)->forModelByCollection($this, $includeTrashed);
     }
 
     // ------------------------------------------------------------- coleções
