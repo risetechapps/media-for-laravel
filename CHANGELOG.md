@@ -12,6 +12,7 @@ Reescrita completa do pacote, **removendo o `spatie/laravel-medialibrary`**. O m
 ### Adicionado
 - **Contabilidade exata de bytes**: tabela `media_files` (uma linha por arquivo físico — `original`, `conversion:{nome}`, `responsive:{largura}`) e coluna `media.total_size` com a soma real ocupada. `MediaFilesystem` é o único caminho de bytes: toda escrita registra e contabiliza, toda remoção reverte.
 - **Trait `InteractsWithMedia`** + contrato `MediaContract`: `addMedia`/`addMediaFromRequest`/`addMediaFromDisk`/`addMediaFromUrl`, coleções e conversões declarativas.
+- **Trait `HasMediaSuite`**: atalho com coleção e conversão `thumb` padrão (config `media.defaults`), extensível via `additionalMediaCollections()`/`additionalMediaConversions()` ou sobrescrita dos `default*()`, sem prender aos defaults.
 - **Coleções** (`MediaCollection`): `singleFile`, `acceptsMimeTypes`, `acceptsFile`, `useDisk`, fallback URL/path, `withResponsiveImages`.
 - **Conversões** com cadeia de geradores (imagem, PDF, vídeo, ícone), enfileiráveis. `Conversion` fluente com `fit`, `format`, `quality`, `sharpen`, `background`, `optimize()`, `orientation()`, `pdfPageNumber`.
 - **Ícones dedicados** por tipo, incluindo `svg`/`ico` (IMG) e código (`json`, `xml`, `html`, `php`, …). Suporte a **HEIC/HEIF** (rasteriza via Imagick).
