@@ -3,6 +3,21 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), e este projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) (SemVer).
 
+## [3.1.0] - 2026-07-23
+
+Correção do caminho de atualização a partir da 1.x/2.x e ferramenta de reconciliação de storage.
+
+### Corrigido
+- **Upgrade da 1.x/2.x quebrado**: o schema v3 da tabela `media` havia sido reescrito *por dentro* da migration `2024_09_30_170815_create_media_table`, mantendo o nome do arquivo. Como o migrator identifica migrations pelo nome (não pelo conteúdo), instalações existentes já tinham esse arquivo marcado como executado e o **pulavam**, ficando presas no schema Spatie antigo (PK `bigint`) — e a criação de `media_files` falhava com `SQLSTATE[42804] Datatype mismatch: uuid vs bigint`. Adicionadas migrations novas, com nomes próprios, que fazem o upgrade in-place **preservando os dados**:
+  - `2026_07_21_000000_upgrade_media_table_to_v3` — promove a coluna `uuid` legada a chave primária `id` (com isso os caminhos físicos existentes batem com o novo layout, sem mover nada no bucket), remove `generated_conversions`, adiciona `total_size`, converte `json` → `jsonb` e cria os índices. **No-op** em instalações novas (detecta se `id` já é uuid).
+  - `2026_07_22_000000_backfill_media_original_files` — registra o arquivo `original` de cada mídia herdada em `media_files` (caminho determinístico `{coleção}/{id}/{arquivo}`, tamanho de `media.size`) e recalcula `total_size`.
+
+### Adicionado
+- **Comando `media:reconcile`**: varre o disco de cada mídia e registra em `media_files` os arquivos físicos ainda não contabilizados — conversões e variantes responsivas herdadas da 1.x, cujo tamanho só existe em disco — recalculando `total_size`. Idempotente, com `--dry-run` e `--media=<uuid>`. Não move nem apaga arquivos; serve também como reconciliação geral.
+
+### Documentação
+- README: seção **Atualizando da 1.x / 2.x** com o fluxo de migração e o uso do `media:reconcile`.
+
 ## [3.0.0] - 2026-07-23
 
 Reescrita completa do pacote, **removendo o `spatie/laravel-medialibrary`**. O motivo central: o Spatie contabiliza apenas o arquivo original (`media.size`) — conversões e imagens responsivas ocupam storage mas escapam da conta. Esta versão registra **cada arquivo físico** e soma os bytes de verdade.

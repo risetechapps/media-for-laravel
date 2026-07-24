@@ -57,6 +57,36 @@ php artisan vendor:publish --tag=config
 
 ---
 
+## 🔄 Atualizando da 1.x / 2.x
+
+A 3.x reescreve o schema (contabilidade de bytes). O upgrade é **automático e preserva os dados** — as mídias antigas continuam servíveis, **sem mover nada no bucket**.
+
+```bash
+composer update risetechapps/media-for-laravel
+php artisan migrate
+php artisan media:reconcile        # opcional — ver abaixo
+```
+
+O `migrate` roda duas migrations de upgrade: convertem a tabela `media` (PK `bigint` → `uuid`, removem `generated_conversions`, adicionam `total_size`, `json` → `jsonb`) e registram o arquivo **original** de cada mídia em `media_files`. Instalações novas ignoram essas migrations automaticamente.
+
+> A conversão promove a coluna `uuid` legada à nova chave primária `id`. Como o layout de arquivos antigo já era `{coleção}/{uuid}/…`, os caminhos físicos continuam válidos — por isso nada precisa ser copiado.
+
+### `media:reconcile` — fechando a contabilidade
+
+O upgrade contabiliza os **originais** (o único tamanho guardado no banco). Conversões e variantes responsivas herdadas ocupam storage, mas o tamanho delas só existe em disco. O `media:reconcile` varre o diretório de cada mídia, registra esses arquivos em `media_files` e recalcula `total_size`:
+
+```bash
+php artisan media:reconcile --dry-run       # mostra o que seria registrado
+php artisan media:reconcile                 # grava
+php artisan media:reconcile --media=<uuid>  # apenas uma mídia
+```
+
+Idempotente e não-destrutivo: só lê tamanhos e escreve no banco, **nunca move ou apaga arquivos**. Enxerga todas as mídias (todos os escopos, inclusive as em lixeira). Serve também como reconciliação geral, caso algum byte tenha sido escrito fora do `MediaFilesystem`.
+
+> ⚠️ A migration de upgrade dropa a coluna `id` (bigint) **sem CASCADE** — se outra tabela referenciar `media.id` por *foreign key*, o `migrate` falha de propósito, em vez de quebrar a integridade em silêncio. Migre essas referências para o novo `id` (uuid) antes de atualizar.
+
+---
+
 ## 🧩 Configuração do Model
 
 Implemente o contrato e use a trait:
