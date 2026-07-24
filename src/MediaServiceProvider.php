@@ -79,6 +79,10 @@ class MediaServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../config/config.php' => config_path('media.php'),
             ], 'config');
+
+            $this->commands([
+                \RiseTechApps\Media\Console\Commands\ReconcileMediaFilesCommand::class,
+            ]);
         }
 
         Event::listen(MediaHasBeenAdded::class, GenerateConversions::class);
