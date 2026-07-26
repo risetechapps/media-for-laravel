@@ -124,24 +124,26 @@ class MediaServiceProvider extends ServiceProvider
      * base da aplicação (ex: 's3' ou 'local'), com um prefixo acrescentado ao
      * 'root'. Isola os arquivos de mídia dentro do storage já existente, sem
      * exigir bucket novo e sem interferir nos demais discos.
+     *
+     * O disco é registrado SEMPRE que o base existe — mesmo sem prefixo — para
+     * garantir que registros legados no banco (que já referenciam o nome
+     * 'media_prefixed_disk') continuem servíveis.
      */
     protected function registerPrefixedMediaDisk(): void
     {
-        if (! MediaDisk::hasPrefix()) {
-            return;
-        }
-
         $baseConfig = config('filesystems.disks.' . MediaDisk::baseName());
 
         if (! $baseConfig) {
             return;
         }
 
-        $root = rtrim((string) ($baseConfig['root'] ?? ''), '/');
+        if (MediaDisk::hasPrefix()) {
+            $root = rtrim((string) ($baseConfig['root'] ?? ''), '/');
 
-        $baseConfig['root'] = $root === ''
-            ? MediaDisk::prefix()
-            : $root . '/' . MediaDisk::prefix();
+            $baseConfig['root'] = $root === ''
+                ? MediaDisk::prefix()
+                : $root . '/' . MediaDisk::prefix();
+        }
 
         config(['filesystems.disks.' . MediaDisk::PREFIXED => $baseConfig]);
     }
