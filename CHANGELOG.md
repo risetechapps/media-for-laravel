@@ -3,6 +3,11 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), e este projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) (SemVer).
 
+## [3.2.0] - 2026-07-26
+
+### Corrigido
+- **Disco `media_prefixed_disk` não registrado**: o disco dinâmico só era criado quando `STORAGE_PREFIX` estava setado, mas registros legados no banco já referenciavam o nome `media_prefixed_disk`. Isso causava `InvalidArgumentException: Disk [media_prefixed_disk] does not have a configured driver` ao gerar URLs de mídia. O disco agora é registrado sempre que o disco base existe, independentemente do prefixo.
+
 ## [3.1.0] - 2026-07-23
 
 Correção do caminho de atualização a partir da 1.x/2.x e ferramenta de reconciliação de storage.
