@@ -3,6 +3,16 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), e este projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) (SemVer).
 
+## [3.2.1] - 2026-08-14
+
+### Adicionado
+- **Atributos `preview` e `thumb` no model `Media`**, serializados por padrão (`$appends`): `preview` devolve a URL do original e `thumb` a da conversão `thumb`, com fallback para o original quando ela ainda não foi gerada. Ambos são `null` quando a mídia não tem arquivo em disco — serializar uma mídia inconsistente não estoura mais exceção.
+
+### Alterado
+- **`fileForVariant()` usa a relação `files` quando já carregada**, em vez de consultar o banco sempre. Sem isso os atributos serializados gerariam N+1 mesmo com `with('media.files')`. `hasGeneratedConversion()` passou a reutilizar o mesmo caminho.
+
+> Ao serializar listas de mídia, carregue a relação (`with('media.files')` ou `$media->load('files')`); caso contrário cada mídia custa consultas extras para montar `preview`/`thumb`.
+
 ## [3.2.0] - 2026-07-26
 
 ### Corrigido
