@@ -42,6 +42,8 @@ class Media extends Model
         ];
     }
 
+    protected $appends = ['preview', 'thumb'];
+
     /**
      * Soft delete mantém os arquivos em disco — eles continuam ocupando (e
      * custando) storage, e seguem visíveis na contagem via `deleted_at`.
@@ -107,8 +109,17 @@ class Media extends Model
         return $total;
     }
 
+    /**
+     * Usa a relação já carregada quando houver — os acessores serializados
+     * (`preview`/`thumb`) consultam variantes a cada mídia, e sem isso um
+     * `with('media.files')` não evitaria o N+1.
+     */
     public function fileForVariant(string $variant): ?MediaFile
     {
+        if ($this->relationLoaded('files')) {
+            return $this->files->firstWhere('variant', $variant);
+        }
+
         return $this->files()->firstWhere('variant', $variant);
     }
 
@@ -122,9 +133,7 @@ class Media extends Model
      */
     public function hasGeneratedConversion(string $conversionName): bool
     {
-        return $this->files()
-            ->where('variant', MediaFile::variantForConversion($conversionName))
-            ->exists();
+        return $this->fileForVariant(MediaFile::variantForConversion($conversionName)) !== null;
     }
 
     public function generatedConversions(): array
@@ -250,6 +259,25 @@ class Media extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('order_column');
+    }
+
+    /**
+     * URL do original. Null quando a mídia ainda não tem arquivo em disco —
+     * serializar não pode estourar exceção.
+     */
+    public function getPreviewAttribute(): ?string
+    {
+        return $this->originalFile() ? $this->getFullUrl() : null;
+    }
+
+    /**
+     * URL da conversão `thumb`, com fallback para o original (`fileFor` já faz
+     * esse desvio). Não existe mais `generated_conversions`: a conversão é
+     * considerada gerada quando há arquivo físico registrado em `media_files`.
+     */
+    public function getThumbAttribute(): ?string
+    {
+        return $this->fileFor('thumb') ? $this->getFullUrl('thumb') : null;
     }
 
     // -------------------------------------------------------------------- prune
