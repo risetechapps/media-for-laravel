@@ -3,6 +3,31 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), e este projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) (SemVer).
 
+## [3.3.0] - 2026-08-21
+
+Correções no vínculo de uploads e no caminho de exclusão, mais a ferramenta que faltava para ligar o escopo de tenancy em base já existente.
+
+### Corrigido
+- **`MediaUploadService::sync()` estourava `SQLSTATE[22P02]` quando a seleção ficava vazia.** `removeUnselected()` usava `['-']` como sentinela em `whereNotIn('id', ...)`; em PostgreSQL a coluna é `uuid` e `'-'` derruba a query com `invalid input syntax for type uuid`. A sentinela era desnecessária — o Laravel já compila `whereNotIn` vazio como `1 = 1`, que é a semântica correta. O bug só aparecia em PostgreSQL: a suíte roda em SQLite, onde `'-'` é texto aceito.
+- **`sync()` só aceitava lista de itens.** Campo de arquivo único (`{"photo": {"id": ..., "file_name": ...}}`) chegava como objeto associativo; o `foreach` iterava os *valores*, `$upload['id'] ?? null` devolvia `null` silenciosamente em cada um e a seleção terminava vazia — o que, além de cair na sentinela acima, teria apagado a coleção inteira. Agora `normalize()` aceita lista, objeto único ou id solto, descarta o que não é uuid antes de tocar na query, e distingue `null` (campo ausente: preserva a coleção) de `[]` (seleção vazia: esvazia).
+
+### Corrigido (contabilidade de bytes)
+- **Exclusão de mídia deixou de passar pelo global scope de escopo.** `deleteAllMedia()` (no trait e no `MediaUploadTemporary`), `FileAdder::removePreviousMedia()` e `MediaUploadService::removeUnselected()` montavam a lista do que apagar por query sobre a relação `media()`, que carrega o `MediaScope`. Com escopo ativo e contexto divergente a query devolvia menos linhas, o `delete()` nunca era chamado nelas, o hook que limpa o disco não rodava e **o arquivo ficava no storage, pago, para sempre** — furando a invariante de bytes do pacote. O caso garantido era o prune: roda pelo scheduler, sem contexto, e sob fail-closed apagaria a linha do upload temporário deixando o arquivo. Os quatro caminhos agora usam `unscoped()`: na exclusão o recorte já vem da posse (a relação é de uma instância específica), então o filtro por cima não protegia nada e só podia esconder linha.
+
+### Adicionado
+- **Comando `media:backfill-scope`**: carimba `custom_properties._scope` na mídia criada antes de existir um `MediaScopeResolver`. Necessário porque o global scope é fail-closed — no instante em que o resolver é registrado, mídia sem `_scope` desaparece de todas as queries. Aceita `--scope=chave=valor` (ou usa o contexto resolvido no momento), `--collection`, `--model`, `--dry-run` e `--force`. Roda em `unscoped()->withTrashed()` (mídia na lixeira ainda ocupa disco), só toca em linha com `_scope` nulo, preserva `updated_at` e não escreve em disco.
+
+  > O contexto de origem **não é recuperável do banco**: o prefixo de sub-tenant das URLs vem do root do disco em tempo de execução, não do `path` gravado em `media_files`. Se um mesmo banco guarda mídia de mais de um contexto sem escopo, não rode sem filtro — carimbaria tudo para o contexto informado.
+
+### Alterado
+- **`Media` passou a ocultar atributos internos na serialização** (`$hidden`): `model_type`, `model_id`, `name`, `manipulations`, `disk`, `conversions_disk`, `total_size`, `custom_properties`, `responsive_images`, `order_column` e timestamps. O payload fica com `id`, `collection_name`, `file_name`, `mime_type`, `size` e as URLs de `$appends` (`preview`/`thumb`) — o que a tela usa, já que o consumidor devolve o mesmo objeto no PUT. Quem precisar de um campo específico usa `makeVisible('total_size')` na chamada.
+
+  > **Atenção:** quem lia `total_size` ou `custom_properties` direto do JSON da mídia deixa de recebê-los.
+
+### Testes
+- `MediaUploadServiceTest`: objeto único, id solto como string, `null` preserva a coleção, id fora do formato uuid é descartado, mídia já vinculada não é recriada.
+- `ScopeTest`: exclusão do dono alcança mídia de outro contexto, `singleFile()` remove a anterior com o contexto trocado, `removeUnselected()` limpa sem contexto.
+
 ## [3.2.1] - 2026-08-14
 
 ### Adicionado
