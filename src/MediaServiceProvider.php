@@ -82,6 +82,7 @@ class MediaServiceProvider extends ServiceProvider
 
             $this->commands([
                 \RiseTechApps\Media\Console\Commands\ReconcileMediaFilesCommand::class,
+                \RiseTechApps\Media\Console\Commands\BackfillMediaScopeCommand::class,
             ]);
         }
 
