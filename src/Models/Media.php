@@ -30,6 +30,31 @@ class Media extends Model
         'total_size' => 0,
     ];
 
+    /**
+     * A mídia é serializada direto nas respostas de API (o consumidor devolve o
+     * mesmo objeto no PUT), então o payload expõe só o que a tela usa: id,
+     * coleção, nome do arquivo, mime, tamanho e as URLs de $appends.
+     *
+     * O resto é detalhe interno — caminho em disco, escopo de tenancy,
+     * contabilidade — e não deve trafegar. Quem precisar de um campo específico
+     * usa makeVisible('total_size') na chamada, sem alterar o default.
+     */
+    protected $hidden = [
+        'model_type',
+        'model_id',
+        'name',
+        'manipulations',
+        'disk',
+        'conversions_disk',
+        'total_size',
+        'custom_properties',
+        'responsive_images',
+        'order_column',
+        'deleted_at',
+        'created_at',
+        'updated_at',
+    ];
+
     protected function casts(): array
     {
         return [
