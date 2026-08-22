@@ -18,7 +18,7 @@ class SyncUploadsJob implements ShouldQueue
 
     public function __construct(
         protected Model $model,
-        protected array $uploads,
+        protected array|string|null $uploads,
         protected string $collectionName = 'uploads',
     ) {
     }
