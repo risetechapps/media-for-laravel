@@ -76,3 +76,45 @@ it('unscoped() ignora a partição e vê tudo', function () {
 
     expect(Media::unscoped()->count())->toBe(2);
 });
+
+/*
+ * Exclusão fura o escopo de propósito: linha escondida nunca receberia delete(),
+ * o hook de limpeza não rodaria e o arquivo ficaria pago para sempre.
+ */
+
+it('deleteAllMedia apaga a mídia de outro contexto junto com o dono', function () {
+    scopeTo(['sub_tenant_id' => 1]);
+    $um = $this->model->addMedia(UploadedFile::fake()->image('a.jpg'))->toMediaCollection('uploads');
+
+    scopeTo(['sub_tenant_id' => 2]);
+    $dois = $this->model->addMedia(UploadedFile::fake()->image('b.jpg'))->toMediaCollection('uploads');
+
+    // Sem contexto: sob fail-closed, nenhuma das duas apareceria numa query normal.
+    scopeTo([]);
+    $this->model->fresh()->deleteAllMedia();
+
+    expect(Media::unscoped()->withTrashed()->whereKey($um->id)->first()->deleted_at)->not->toBeNull()
+        ->and(Media::unscoped()->withTrashed()->whereKey($dois->id)->first()->deleted_at)->not->toBeNull();
+});
+
+it('singleFile remove a anterior mesmo com o contexto trocado', function () {
+    scopeTo(['sub_tenant_id' => 1]);
+    $antiga = $this->model->addMedia(UploadedFile::fake()->image('velha.jpg'))->toMediaCollection('avatar');
+
+    scopeTo(['sub_tenant_id' => 2]);
+    $this->model->fresh()->addMedia(UploadedFile::fake()->image('nova.jpg'))->toMediaCollection('avatar');
+
+    // removePreviousMedia usa forceDelete: a anterior não fica nem na lixeira.
+    expect(Media::unscoped()->withTrashed()->whereKey($antiga->id)->exists())->toBeFalse();
+});
+
+it('removeUnselected apaga o que saiu da seleção mesmo sem contexto', function () {
+    scopeTo(['sub_tenant_id' => 1]);
+    $sai = $this->model->addMedia(UploadedFile::fake()->image('sai.jpg'))->toMediaCollection('uploads');
+
+    scopeTo([]);
+    app(\RiseTechApps\Media\Support\Uploads\MediaUploadService::class)
+        ->sync($this->model->fresh(), [], 'uploads');
+
+    expect(Media::unscoped()->withTrashed()->whereKey($sai->id)->first()->deleted_at)->not->toBeNull();
+});

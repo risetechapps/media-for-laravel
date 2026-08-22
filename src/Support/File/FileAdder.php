@@ -222,10 +222,17 @@ class FileAdder
      * Usa exclusão definitiva: o arquivo foi substituído, não arquivado.
      * Mandá-lo para a lixeira faria cada troca de foto dobrar o storage pago
      * até o prune — em coleção que só guarda um item, isso não se justifica.
+     *
+     * A exclusão fura o global scope de propósito: o recorte já vem da
+     * posse (a relação é de uma instância específica, alcançada depois de auth
+     * e tenancy). O filtro por cima não protege nada e ainda pode esconder
+     * linha — e linha escondida nunca recebe delete(), logo o hook que limpa o
+     * disco não roda e o arquivo fica pago para sempre.
      */
     protected function removePreviousMedia(Media $media, string $collectionName): void
     {
         $this->subject->media()
+            ->unscoped()
             ->inCollection($collectionName)
             ->whereKeyNot($media->getKey())
             ->cursor()

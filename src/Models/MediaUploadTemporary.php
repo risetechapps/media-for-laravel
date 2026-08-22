@@ -28,11 +28,16 @@ class MediaUploadTemporary extends Model implements MediaContract
      * Diferente dos models de domínio, o temporário remove a mídia em definitivo.
      * Mandar para a lixeira um arquivo que existe só durante o upload manteria
      * bytes pagos no storage sem nenhum motivo.
+     *
+     * Fura o global scope pelo mesmo motivo do trait: o prune roda pelo
+     * scheduler, sem contexto de tenancy, e sob fail-closed não enxergaria a
+     * mídia carimbada — apagaria a linha do temporário e deixaria o arquivo.
      */
     #[\Override]
     public function deleteAllMedia(): static
     {
         $this->media()
+            ->unscoped()
             ->cursor()
             ->each(fn (Media $media) => $media->forceDelete());
 

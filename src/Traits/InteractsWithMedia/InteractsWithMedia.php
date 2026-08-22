@@ -340,9 +340,17 @@ trait InteractsWithMedia
         return $this;
     }
 
+    /**
+     * A exclusão fura o global scope de propósito: o recorte já vem da
+     * posse (a relação é de uma instância específica, alcançada depois de auth
+     * e tenancy). O filtro por cima não protege nada e ainda pode esconder
+     * linha — e linha escondida nunca recebe delete(), logo o hook que limpa o
+     * disco não roda e o arquivo fica pago para sempre.
+     */
     public function deleteAllMedia(): static
     {
         $this->media()
+            ->unscoped()
             ->cursor()
             ->each(fn (Media $media) => $media->delete());
 
