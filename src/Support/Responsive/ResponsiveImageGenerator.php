@@ -3,6 +3,7 @@
 namespace RiseTechApps\Media\Support\Responsive;
 
 use Illuminate\Support\Facades\Storage;
+use RiseTechApps\Media\Exceptions\MediaNoLongerExists;
 use RiseTechApps\Media\Models\Media;
 use RiseTechApps\Media\Support\Filesystem\MediaFilesystem;
 use Spatie\Image\Image;
@@ -25,6 +26,11 @@ class ResponsiveImageGenerator
     public function generate(Media $media): void
     {
         if (! $this->isDownscalableImage($media)) {
+            return;
+        }
+
+        // Mídia apagada entre o enfileiramento e agora: nada a reduzir.
+        if (! $media->stillExists()) {
             return;
         }
 
@@ -65,6 +71,9 @@ class ResponsiveImageGenerator
             // Substitui o marcador 'pending' pelas larguras realmente geradas —
             // o srcset é montado a partir dos arquivos, este campo é só o resumo.
             $media->forceFill(['responsive_images' => ['widths' => $generated]])->saveQuietly();
+        } catch (MediaNoLongerExists) {
+            // A mídia sumiu durante a geração (troca de arquivo em coleção de
+            // arquivo único, por exemplo). Não é falha: sai em silêncio.
         } catch (Throwable $exception) {
             // Falha aqui não invalida a mídia: o original continua íntegro e
             // servível, apenas sem as variantes responsivas.

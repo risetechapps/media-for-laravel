@@ -23,6 +23,13 @@ class PerformConversionsJob implements ShouldQueue
     public int $timeout = 900;
 
     /**
+     * Mídia apagada antes do job sair da fila (troca de arquivo em coleção de
+     * arquivo único) descarta o job em vez de marcá-lo como falho: o derivado
+     * perdeu o destino, não houve erro.
+     */
+    public bool $deleteWhenMissingModels = true;
+
+    /**
      * @param  array<int, string>  $conversionNames
      */
     public function __construct(
@@ -33,6 +40,13 @@ class PerformConversionsJob implements ShouldQueue
 
     public function handle(ConversionEngine $engine): void
     {
+        // Reconferido no banco: o job pode ter esperado na fila enquanto a mídia
+        // era apagada em definitivo. Sem isso, o trabalho todo é feito para
+        // esbarrar na foreign key de `media_files` no fim.
+        if (! $this->media->stillExists()) {
+            return;
+        }
+
         $owner = $this->media->model;
 
         if (! $owner) {

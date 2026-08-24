@@ -5,6 +5,7 @@ namespace RiseTechApps\Media\Support\Conversions;
 use Illuminate\Support\Facades\Storage;
 use RiseTechApps\Media\Contracts\ImageGeneratorContract;
 use RiseTechApps\Media\Events\ConversionHasBeenCompleted;
+use RiseTechApps\Media\Exceptions\MediaNoLongerExists;
 use RiseTechApps\Media\Models\Media;
 use RiseTechApps\Media\Support\Filesystem\MediaFilesystem;
 use Spatie\Image\Enums\Fit;
@@ -42,6 +43,12 @@ class ConversionEngine
             return;
         }
 
+        // A mídia pode ter sido apagada entre o enfileiramento e agora — baixar
+        // o original e converter seria trabalho para um destino que não existe.
+        if (! $media->stillExists()) {
+            return;
+        }
+
         $temporaryDirectory = (new TemporaryDirectory())->create();
 
         try {
@@ -54,6 +61,10 @@ class ConversionEngine
             foreach ($conversions as $conversion) {
                 $this->performOne($media, $conversion, $originalPath, $temporaryDirectory->path());
             }
+        } catch (MediaNoLongerExists) {
+            // A mídia sumiu no meio do lote: as conversões restantes perderam o
+            // destino. Sai em silêncio — não é falha, e o arquivo já gravado foi
+            // removido do disco por quem lançou.
         } finally {
             // O diretório temporário some mesmo em caso de erro: conversão que
             // falha não pode deixar arquivo acumulando no servidor.
@@ -87,7 +98,17 @@ class ConversionEngine
 
             $this->filesystem->storeConversion($media, $conversion->name, $target);
 
-            event(new ConversionHasBeenCompleted($media->refresh(), $conversion));
+            // Recarrega sem findOrFail: `refresh()` estouraria se a mídia tivesse
+            // sido apagada logo depois da gravação.
+            $fresh = Media::query()->unscoped()->withTrashed()->find($media->getKey());
+
+            if ($fresh) {
+                event(new ConversionHasBeenCompleted($fresh, $conversion));
+            }
+        } catch (MediaNoLongerExists $exception) {
+            // Sobe para `perform()`: sem mídia, as conversões seguintes do lote
+            // também não têm onde ser registradas.
+            throw $exception;
         } catch (Throwable $exception) {
             // Uma conversão que falha não invalida a mídia nem as demais
             // conversões — o original continua íntegro e servível.

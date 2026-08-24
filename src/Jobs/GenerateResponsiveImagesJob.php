@@ -22,6 +22,9 @@ class GenerateResponsiveImagesJob implements ShouldQueue
 
     public int $timeout = 900;
 
+    /** Mesma razão do PerformConversionsJob: sem mídia, não há o que gerar. */
+    public bool $deleteWhenMissingModels = true;
+
     public function __construct(protected Media $media)
     {
     }

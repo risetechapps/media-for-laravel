@@ -2,8 +2,10 @@
 
 namespace RiseTechApps\Media\Support\Filesystem;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Storage;
 use RiseTechApps\Media\Contracts\PathGeneratorContract;
+use RiseTechApps\Media\Exceptions\MediaNoLongerExists;
 use RiseTechApps\Media\Models\Media;
 use RiseTechApps\Media\Models\MediaFile;
 use Throwable;
@@ -174,29 +176,59 @@ class MediaFilesystem
      *
      * Em falha no registro, o arquivo recém-gravado é removido para não deixar
      * bytes no disco sem linha correspondente.
+     *
+     * A mídia é reconferida no banco antes da escrita da linha: um job de
+     * derivado leva segundos e, nesse intervalo, a mídia pode ter sido apagada
+     * em definitivo (troca de arquivo em coleção `singleFile`). Sem a conferência
+     * o insert bate na foreign key de `media_files`. A corrida que sobra — a
+     * exclusão caindo entre o SELECT e o INSERT — chega como violação 23503 e é
+     * traduzida para a mesma exceção, que o chamador trata como no-op.
      */
     protected function register(Media $media, string $variant, string $disk, string $path, int $size): MediaFile
     {
         try {
+            if (! $media->stillExists()) {
+                throw MediaNoLongerExists::forKey((string) $media->getKey());
+            }
+
             $existing = $media->fileForVariant($variant);
 
             if ($existing && $existing->path !== $path) {
                 $existing->deleteFromDisk();
             }
 
-            $file = $media->files()->updateOrCreate(
-                ['variant' => $variant],
-                ['disk' => $disk, 'path' => $path, 'size' => $size],
-            );
+            try {
+                $file = $media->files()->updateOrCreate(
+                    ['variant' => $variant],
+                    ['disk' => $disk, 'path' => $path, 'size' => $size],
+                );
+            } catch (QueryException $exception) {
+                throw $this->violatesMediaForeignKey($exception)
+                    ? MediaNoLongerExists::forKey((string) $media->getKey())
+                    : $exception;
+            }
 
             $media->recalculateTotalSize();
 
             return $file;
         } catch (Throwable $exception) {
+            // Vale também para a mídia sumida: o arquivo já subiu para o disco
+            // e ficaria pago sem nenhuma linha apontando para ele.
             Storage::disk($disk)->delete($path);
 
             throw $exception;
         }
+    }
+
+    /**
+     * `media_files.media_id` sem mídia correspondente. SQLSTATE 23503 é o código
+     * padrão de violação de foreign key; o nome da constraint distingue esta das
+     * demais que a mesma tabela possa ganhar.
+     */
+    protected function violatesMediaForeignKey(QueryException $exception): bool
+    {
+        return ($exception->getCode() === '23503' || str_contains($exception->getMessage(), '23503'))
+            && str_contains($exception->getMessage(), 'media_files_media_id_foreign');
     }
 
     protected function removeSource(string $source, ?string $sourceDisk): void

@@ -102,6 +102,27 @@ class Media extends Model
         return $query->withoutGlobalScope(MediaScope::class);
     }
 
+    /**
+     * A linha ainda está no banco?
+     *
+     * Instância carregada não é garantia de linha viva: jobs de conversão
+     * carregam a mídia e trabalham por segundos, tempo em que uma troca de
+     * arquivo em coleção `singleFile` pode ter apagado a anterior em
+     * definitivo. Gravar `media_files` depois disso estoura a foreign key.
+     *
+     * Ignora escopo e lixeira de propósito: a pergunta é sobre a existência
+     * física da linha, não sobre visibilidade — mídia na lixeira mantém os
+     * arquivos e a conversão pendente continua válida.
+     */
+    public function stillExists(): bool
+    {
+        return static::query()
+            ->unscoped()
+            ->withTrashed()
+            ->whereKey($this->getKey())
+            ->exists();
+    }
+
     // ---------------------------------------------------------------- relações
 
     public function model(): MorphTo
