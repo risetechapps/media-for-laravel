@@ -3,6 +3,23 @@
 Todas as alterações notáveis neste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), e este projeto segue o [Versionamento Semântico](https://semver.org/lang/pt-BR/) (SemVer).
 
+## [3.3.1] - 2026-08-24
+
+Corrida entre a geração de derivados em fila e a exclusão definitiva da mídia.
+
+### Corrigido
+- **`PerformConversionsJob` estourava `SQLSTATE[23503]` (`media_files_media_id_foreign`) quando a mídia era apagada enquanto o job rodava.** Coleção `singleFile` remove a anterior com `forceDelete` (`FileAdder::removePreviousMedia`), e `MediaUploadTemporary::deleteAllMedia` faz o mesmo — a linha some de `media` de verdade, não vai para a lixeira. O job já havia carregado a mídia e, depois de baixar o original e converter (segundos), tentava inserir a linha do derivado apontando para uma mídia inexistente. A contabilidade de bytes não foi afetada — o derivado já tinha subido para o disco, mas o tratamento de falha de `register()` o removia — o custo era o log de erro a cada troca de arquivo durante uma conversão, um `report()` para uma condição esperada.
+
+  Agora o caminho de escrita reconfere a mídia no banco (`Media::stillExists()`, ignorando escopo e lixeira — mídia na lixeira mantém os arquivos e a conversão continua válida) antes de registrar a linha, e a corrida restante (exclusão entre o SELECT e o INSERT) é reconhecida pelo SQLSTATE e pelo nome da constraint. Nos dois casos o arquivo recém-gravado é removido do disco e sobe uma `MediaNoLongerExists`, que `ConversionEngine` e `ResponsiveImageGenerator` tratam como no-op silencioso — não é falha, é trabalho que perdeu o destino, e `report()` só encheria o log.
+- **`ConversionEngine::performOne()` podia estourar `ModelNotFoundException` no evento de conclusão.** `$media->refresh()` usa `findOrFail`; com a mídia apagada logo após a gravação, o evento derrubava a conversão. Passa a recarregar com `find`, e o `ConversionHasBeenCompleted` só dispara se a mídia ainda estiver lá.
+
+### Alterado
+- **`PerformConversionsJob` e `GenerateResponsiveImagesJob` marcam `$deleteWhenMissingModels = true`.** Mídia apagada antes de o job sair da fila descarta o job em vez de acumular jobs falhos no Horizon. `SyncUploadsJob` fica de fora de propósito: lá o model ausente significa upload que nunca será vinculado — tem de falhar visível.
+- Guarda antecipada em `ConversionEngine::perform()`, `ResponsiveImageGenerator::generate()` e `PerformConversionsJob::handle()`: mídia inexistente sai antes de baixar o original do storage.
+
+### Testes
+- `DeletedMediaDuringConversionTest`: `stillExists()` distingue lixeira de exclusão definitiva; `storeConversion()` em mídia apagada lança `MediaNoLongerExists` e não deixa o derivado no disco; `perform()`/`handle()` viram no-op; troca em coleção `singleFile` de fato apaga a anterior em definitivo.
+
 ## [3.3.0] - 2026-08-21
 
 Correções no vínculo de uploads e no caminho de exclusão, mais a ferramenta que faltava para ligar o escopo de tenancy em base já existente.
